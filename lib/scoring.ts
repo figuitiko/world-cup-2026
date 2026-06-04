@@ -1,4 +1,4 @@
-import type { Match, Prediction, SpecialPick, TournamentResult } from '../generated/prisma/client'
+import type { Match, Prediction, SpecialPick, TournamentResult } from '@/generated/prisma/client'
 
 type PredictionWithMatch = Prediction & {
   match: Match & { result: string | null }

@@ -37,10 +37,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: 'jwt' },
   callbacks: {
     jwt({ token, user }) {
-      if (user) {
+      if (user && 'isAdmin' in user) {
         token.id = user.id
-        token.isAdmin = (user as any).isAdmin
-        token.leagueId = (user as any).leagueId
+        token.isAdmin = user.isAdmin as boolean
+        token.leagueId = ('leagueId' in user ? user.leagueId : null) as string | null
       }
       return token
     },

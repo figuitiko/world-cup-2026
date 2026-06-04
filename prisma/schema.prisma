@@ -16,7 +16,7 @@ model User {
   createdAt   DateTime     @default(now())
   predictions Prediction[]
   specialPick SpecialPick?
-  league      League?      @relation(fields: [leagueId], references: [id])
+  league      League?      @relation(fields: [leagueId], references: [id], onDelete: SetNull)
   leagueId    String?
 }
 
@@ -39,6 +39,9 @@ model Match {
   venue       String
   result      Result?
   predictions Prediction[]
+
+  @@index([round])
+  @@index([group])
 }
 
 enum Result {
@@ -53,10 +56,12 @@ model Prediction {
   matchId   String
   pick      Result
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  match     Match    @relation(fields: [matchId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@unique([userId, matchId])
+  @@index([userId])
+  @@index([matchId])
 }
 
 model SpecialPick {
@@ -64,7 +69,7 @@ model SpecialPick {
   userId     String   @unique
   champions  String[]
   topScorers String[]
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TournamentResult {

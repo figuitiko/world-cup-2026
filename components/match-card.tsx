@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
 const RESULT_LABEL: Record<string, string> = {
@@ -23,47 +23,93 @@ interface Props {
 export function MatchCard({ match, prediction }: Props) {
   const isLocked = match.kickoff <= new Date()
   const isCorrect = prediction && match.result ? prediction.pick === match.result : null
+  const isTBD = match.homeTeam === 'POR DEFINIR'
+
+  const kickoff = new Date(match.kickoff)
+  const dateStr = kickoff.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+  const timeStr = kickoff.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <Link href={`/matches/${match.id}`}>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">
-                {match.homeTeam} vs {match.awayTeam}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(match.kickoff).toLocaleDateString('es-AR', {
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}{' '}
-                · {match.venue.split(',')[0]}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              {!isLocked && (
-                <Badge variant={prediction ? 'default' : 'outline'}>
-                  {prediction
-                    ? pickLabel(prediction.pick, match.homeTeam, match.awayTeam)
-                    : 'Sin pronóstico'}
-                </Badge>
-              )}
-              {isLocked && match.result && (
-                <Badge variant={isCorrect ? 'default' : 'secondary'}>
-                  {isCorrect ? '✓ ' : '✗ '}
-                  {RESULT_LABEL[match.result]}
-                </Badge>
-              )}
-              {isLocked && !match.result && (
-                <Badge variant="outline">Resultado pendiente</Badge>
-              )}
-            </div>
+    <Link href={`/matches/${match.id}`} className="block group">
+      <div
+        className={cn(
+          'rounded-xl border bg-card px-4 py-3 transition-all duration-200',
+          'hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5',
+          isLocked && 'opacity-90'
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {match.group ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                Grupo {match.group}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                {match.round}
+              </span>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {dateStr} · {timeStr}
+          </span>
+        </div>
+
+        {/* Teams */}
+        <div className="flex items-center gap-2 mb-2.5">
+          <p
+            className={cn(
+              'flex-1 font-heading font-bold text-base leading-tight',
+              isTBD && 'text-muted-foreground italic'
+            )}
+          >
+            {match.homeTeam}
+          </p>
+          <span className="shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+            VS
+          </span>
+          <p
+            className={cn(
+              'flex-1 text-right font-heading font-bold text-base leading-tight',
+              isTBD && 'text-muted-foreground italic'
+            )}
+          >
+            {match.awayTeam}
+          </p>
+        </div>
+
+        {/* Status */}
+        <div className="flex justify-center">
+          {!isLocked && (
+            <Badge
+              variant={prediction ? 'default' : 'outline'}
+              className={cn('text-xs', !prediction && 'text-muted-foreground border-dashed')}
+            >
+              {prediction
+                ? pickLabel(prediction.pick, match.homeTeam, match.awayTeam)
+                : 'Sin pronóstico'}
+            </Badge>
+          )}
+          {isLocked && match.result && (
+            <Badge
+              variant="secondary"
+              className={cn(
+                'text-xs',
+                isCorrect && 'bg-green-100 text-green-700 border-green-200',
+                isCorrect === false && 'bg-red-100 text-red-700 border-red-200'
+              )}
+            >
+              {isCorrect ? '✓' : '✗'} {RESULT_LABEL[match.result]}
+            </Badge>
+          )}
+          {isLocked && !match.result && (
+            <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">
+              Resultado pendiente
+            </Badge>
+          )}
+        </div>
+      </div>
     </Link>
   )
 }

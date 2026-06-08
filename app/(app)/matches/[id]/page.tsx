@@ -2,8 +2,19 @@ import { notFound } from 'next/navigation'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { PredictionForm } from '@/components/prediction-form'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+
+const ROUND_LABELS: Record<string, string> = {
+  GROUP: 'Fase de Grupos',
+  R32: 'Ronda de 32',
+  R16: 'Octavos de Final',
+  QF: 'Cuartos de Final',
+  SF: 'Semifinales',
+  '3RD': 'Tercer Puesto',
+  FINAL: 'Final',
+}
 
 function resultLabel(result: string, home: string, away: string): string {
   if (result === 'HOME') return `Ganó ${home}`
@@ -37,50 +48,126 @@ export default async function MatchDetailPage({
 
   const isLocked = match.kickoff <= new Date()
   const isTBD = match.homeTeam === 'POR DEFINIR'
+  const isCorrect = prediction && match.result ? prediction.pick === match.result : null
+
+  const kickoff = new Date(match.kickoff)
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">
-            {match.homeTeam} vs {match.awayTeam}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {new Date(match.kickoff).toLocaleDateString('es-AR', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
-          <p className="text-sm text-muted-foreground">{match.venue}</p>
-          {match.group && <Badge variant="outline">Grupo {match.group}</Badge>}
-        </CardHeader>
-        <CardContent>
-          {isTBD && (
-            <p className="text-muted-foreground">
-              Equipos por confirmar. Disponible cuando avance el torneo.
-            </p>
+    <div className="space-y-4">
+      <Card className="overflow-hidden">
+        {/* Stage badge */}
+        <div className="bg-primary/5 border-b px-4 py-2 flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-widest text-primary">
+            {match.group ? `Grupo ${match.group}` : ROUND_LABELS[match.round] ?? match.round}
+          </span>
+          {isLocked && !match.result && (
+            <Badge variant="outline" className="text-[10px] border-dashed text-muted-foreground">
+              Resultado pendiente
+            </Badge>
           )}
-          {!isTBD && isLocked && match.result && (
-            <div className="space-y-2">
-              <p className="font-medium">
-                Resultado: {resultLabel(match.result, match.homeTeam, match.awayTeam)}
+          {isLocked && match.result && (
+            <Badge
+              variant="secondary"
+              className={cn(
+                'text-[10px]',
+                isCorrect && 'bg-green-100 text-green-700',
+                isCorrect === false && 'bg-red-100 text-red-700'
+              )}
+            >
+              {isCorrect ? '✓ Acertaste' : '✗ Fallaste'}
+            </Badge>
+          )}
+        </div>
+
+        <CardHeader className="pb-4 pt-5">
+          {/* Teams */}
+          <div className="flex items-center gap-4 justify-center">
+            <p
+              className={cn(
+                'flex-1 text-right font-heading font-bold text-xl leading-tight',
+                isTBD && 'text-muted-foreground italic'
+              )}
+            >
+              {match.homeTeam}
+            </p>
+            <div className="shrink-0 text-center">
+              <div className="bg-muted rounded-lg px-3 py-1.5 font-bold text-sm text-muted-foreground">
+                VS
+              </div>
+              <div className="text-xs text-muted-foreground mt-1 tabular-nums">
+                {kickoff.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+            <p
+              className={cn(
+                'flex-1 font-heading font-bold text-xl leading-tight',
+                isTBD && 'text-muted-foreground italic'
+              )}
+            >
+              {match.awayTeam}
+            </p>
+          </div>
+
+          {/* Meta */}
+          <div className="text-center space-y-0.5 mt-3">
+            <p className="text-xs text-muted-foreground">
+              {kickoff.toLocaleDateString('es-AR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </p>
+            <p className="text-xs text-muted-foreground">{match.venue}</p>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0">
+          {/* Result */}
+          {isLocked && match.result && (
+            <div
+              className={cn(
+                'rounded-xl p-4 mb-4 text-center',
+                isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+              )}
+            >
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-1">
+                Resultado
               </p>
-              {prediction ? (
-                <p className={prediction.pick === match.result ? 'text-green-600' : 'text-red-500'}>
-                  Tu pronóstico: {pickLabel(prediction.pick, match.homeTeam, match.awayTeam)}{' '}
-                  {prediction.pick === match.result ? '✓ (+1 punto)' : '✗'}
+              <p className="font-heading font-bold text-lg">
+                {resultLabel(match.result, match.homeTeam, match.awayTeam)}
+              </p>
+              {prediction && (
+                <p
+                  className={cn(
+                    'text-sm mt-2 font-medium',
+                    isCorrect ? 'text-green-700' : 'text-red-600'
+                  )}
+                >
+                  Tu pronóstico: {pickLabel(prediction.pick, match.homeTeam, match.awayTeam)}
+                  {isCorrect ? ' — ¡Acertaste! (+1 punto)' : ' — No acertaste'}
                 </p>
-              ) : (
-                <p className="text-muted-foreground">No pronosticaste este partido.</p>
+              )}
+              {!prediction && (
+                <p className="text-sm text-muted-foreground mt-2">No pronosticaste este partido.</p>
               )}
             </div>
           )}
-          {!isTBD && isLocked && !match.result && (
-            <p className="text-muted-foreground">Resultado pendiente.</p>
+
+          {/* Locked no result */}
+          {isLocked && !match.result && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Esperando resultado oficial...
+            </p>
           )}
+
+          {/* TBD */}
+          {isTBD && !isLocked && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Equipos por confirmar. Disponible cuando avance el torneo.
+            </p>
+          )}
+
+          {/* Prediction form */}
           {!isTBD && !isLocked && (
             <PredictionForm
               matchId={match.id}

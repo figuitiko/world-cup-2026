@@ -1,10 +1,8 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { createOrUpdatePrediction } from '@/actions/predictions'
 
 interface Props {
@@ -15,13 +13,12 @@ interface Props {
 }
 
 export function PredictionForm({ matchId, homeTeam, awayTeam, currentPick }: Props) {
+  const [selected, setSelected] = useState<string | null>(currentPick)
   const [isPending, startTransition] = useTransition()
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const fd = new FormData(e.currentTarget)
-    const pick = fd.get('pick') as string
-    if (!pick) return
+  function save(pick: string) {
+    if (pick === selected || isPending) return
+    setSelected(pick)
     startTransition(async () => {
       const result = await createOrUpdatePrediction(matchId, pick)
       if (result?.error) {
@@ -32,31 +29,53 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, currentPick }: Pro
     })
   }
 
+  const options = [
+    { value: 'HOME', label: homeTeam, sublabel: 'Local' },
+    { value: 'DRAW', label: 'Empate', sublabel: '—' },
+    { value: 'AWAY', label: awayTeam, sublabel: 'Visitante' },
+  ]
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <RadioGroup name="pick" defaultValue={currentPick ?? undefined}>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="HOME" id="pick-home" />
-          <Label htmlFor="pick-home" className="cursor-pointer text-base">
-            Gana {homeTeam}
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="DRAW" id="pick-draw" />
-          <Label htmlFor="pick-draw" className="cursor-pointer text-base">
-            Empate
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="AWAY" id="pick-away" />
-          <Label htmlFor="pick-away" className="cursor-pointer text-base">
-            Gana {awayTeam}
-          </Label>
-        </div>
-      </RadioGroup>
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? 'Guardando...' : 'Guardar pronóstico'}
-      </Button>
-    </form>
+    <div className="space-y-4">
+      <p className="text-sm font-medium text-muted-foreground text-center">
+        ¿Cuál es tu pronóstico?
+      </p>
+      <div className="grid grid-cols-3 gap-3">
+        {options.map((opt) => {
+          const isSelected = selected === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => save(opt.value)}
+              disabled={isPending}
+              className={cn(
+                'flex flex-col items-center gap-1 py-5 px-2 rounded-xl border-2 font-medium text-center',
+                'transition-all duration-150 cursor-pointer select-none',
+                'hover:scale-[1.03] active:scale-[0.97]',
+                'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
+                isSelected
+                  ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'border-border bg-card hover:border-primary/40 hover:bg-primary/5'
+              )}
+            >
+              <span
+                className={cn(
+                  'text-[10px] uppercase tracking-wider font-semibold',
+                  isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                )}
+              >
+                {opt.sublabel}
+              </span>
+              <span className="text-sm leading-snug font-bold">{opt.label}</span>
+              {isSelected && <span className="text-primary-foreground/80 text-xs mt-0.5">✓</span>}
+            </button>
+          )
+        })}
+      </div>
+      {isPending && (
+        <p className="text-xs text-muted-foreground text-center animate-pulse">Guardando...</p>
+      )}
+    </div>
   )
 }

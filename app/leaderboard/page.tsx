@@ -7,6 +7,8 @@ import {
   computeScorerBonus,
 } from '@/lib/scoring'
 import type { Match, Prediction, SpecialPick, TournamentResult } from '@/generated/prisma/client'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 interface LeaderboardEntry {
   userId: string
@@ -59,7 +61,18 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Tabla de Posiciones</h1>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-heading font-bold text-3xl">Tabla de Posiciones</h1>
+          <p className="text-sm text-muted-foreground mt-1">Clasificación general del torneo</p>
+        </div>
+        {!session && (
+          <Button asChild size="sm" className="shrink-0 mt-1">
+            <Link href="/login">Jugar</Link>
+          </Button>
+        )}
+      </div>
+
       <LeaderboardTable entries={entries} currentUserId={session?.user.id} />
     </div>
   )

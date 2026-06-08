@@ -32,9 +32,20 @@ export default async function MatchesPage() {
     byRound.get(match.round)!.push(match)
   }
 
+  if (matches.length === 0) {
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-5xl">📅</div>
+        <h1 className="font-heading font-bold text-2xl">Sin partidos todavía</h1>
+        <p className="text-sm text-muted-foreground">Volvé pronto, los fixtures se cargan antes del torneo.</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Partidos</h1>
+    <div className="space-y-10">
+      <h1 className="font-heading font-bold text-3xl">Partidos</h1>
+
       {ROUND_ORDER.filter((r) => byRound.has(r)).map((round) => {
         const roundMatches = byRound.get(round)!
 
@@ -47,13 +58,16 @@ export default async function MatchesPage() {
           }
           return (
             <section key={round}>
-              <h2 className="text-lg font-semibold mb-3">{ROUND_LABELS[round]}</h2>
+              <h2 className="font-heading font-bold text-xl uppercase tracking-wide mb-4 flex items-center gap-2.5">
+                <span className="w-1 h-6 bg-primary rounded-full" />
+                {ROUND_LABELS[round]}
+              </h2>
               <div className="space-y-6">
                 {Array.from(byGroup.entries())
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([group, gMatches]) => (
                     <div key={group}>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 pl-1">
                         Grupo {group}
                       </h3>
                       <div className="space-y-2">
@@ -74,7 +88,10 @@ export default async function MatchesPage() {
 
         return (
           <section key={round}>
-            <h2 className="text-lg font-semibold mb-3">{ROUND_LABELS[round]}</h2>
+            <h2 className="font-heading font-bold text-xl uppercase tracking-wide mb-4 flex items-center gap-2.5">
+              <span className="w-1 h-6 bg-primary rounded-full" />
+              {ROUND_LABELS[round]}
+            </h2>
             <div className="space-y-2">
               {roundMatches.map((m: Match) => (
                 <MatchCard key={m.id} match={m} prediction={predictionMap.get(m.id) ?? null} />

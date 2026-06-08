@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    league: { findUnique: vi.fn() },
+    league: { findFirst: vi.fn() },
     user: { findUnique: vi.fn(), create: vi.fn() },
   },
 }))
@@ -22,27 +22,14 @@ import { prisma } from '@/lib/db'
 describe('register', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returns error when invite code is invalid', async () => {
-    ;(prisma.league.findUnique as any).mockResolvedValue(null)
-    const { register } = await import('@/actions/auth')
-    const fd = new FormData()
-    fd.set('name', 'Frank')
-    fd.set('email', 'f@f.com')
-    fd.set('password', 'password123')
-    fd.set('inviteCode', 'bad')
-    const result = await register(fd)
-    expect(result).toEqual({ error: 'Código de invitación inválido' })
-  })
-
   it('returns error when email already registered', async () => {
-    ;(prisma.league.findUnique as any).mockResolvedValue({ id: 'league1' })
+    ;(prisma.league.findFirst as any).mockResolvedValue({ id: 'league1' })
     ;(prisma.user.findUnique as any).mockResolvedValue({ id: 'existing' })
     const { register } = await import('@/actions/auth')
     const fd = new FormData()
     fd.set('name', 'Frank')
     fd.set('email', 'f@f.com')
     fd.set('password', 'password123')
-    fd.set('inviteCode', 'valid')
     const result = await register(fd)
     expect(result).toEqual({ error: 'Este email ya está registrado' })
   })
@@ -53,8 +40,22 @@ describe('register', () => {
     fd.set('name', 'F')
     fd.set('email', 'notanemail')
     fd.set('password', 'short')
-    fd.set('inviteCode', '')
     const result = await register(fd)
     expect(result).toEqual({ error: 'Datos inválidos' })
+  })
+
+  it('creates user joined to Mundial 2026 league', async () => {
+    ;(prisma.league.findFirst as any).mockResolvedValue({ id: 'league1' })
+    ;(prisma.user.findUnique as any).mockResolvedValue(null)
+    ;(prisma.user.create as any).mockResolvedValue({ id: 'user1' })
+    const { register } = await import('@/actions/auth')
+    const fd = new FormData()
+    fd.set('name', 'Frank')
+    fd.set('email', 'f@f.com')
+    fd.set('password', 'password123')
+    await register(fd)
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ leagueId: 'league1' }),
+    })
   })
 })

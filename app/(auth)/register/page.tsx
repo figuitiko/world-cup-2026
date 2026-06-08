@@ -42,11 +42,7 @@ export default function RegisterPage() {
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" name="password" type="password" required minLength={8} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="inviteCode">Código de invitación</Label>
-              <Input id="inviteCode" name="inviteCode" required />
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+{error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? 'Creando cuenta...' : 'Crear cuenta'}
             </Button>

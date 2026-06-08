@@ -22,7 +22,7 @@ export function LeaderboardTable({
   currentUserId,
 }: {
   entries: LeaderboardEntry[]
-  currentUserId: string
+  currentUserId?: string
 }) {
   if (entries.length === 0) {
     return <p className="text-muted-foreground text-sm">Aún no hay resultados cargados.</p>

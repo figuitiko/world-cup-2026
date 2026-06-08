@@ -29,10 +29,7 @@ export default async function LeaderboardPage() {
 
   const [users, tournamentResult] = await Promise.all([
     prisma.user.findMany({
-      where: {
-        leagueId: session!.user.leagueId ?? undefined,
-        isAdmin: false,
-      },
+      where: { isAdmin: false },
       include: {
         predictions: { include: { match: true } },
         specialPick: true,
@@ -63,7 +60,7 @@ export default async function LeaderboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Tabla de Posiciones</h1>
-      <LeaderboardTable entries={entries} currentUserId={session!.user.id} />
+      <LeaderboardTable entries={entries} currentUserId={session?.user.id} />
     </div>
   )
 }

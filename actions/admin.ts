@@ -62,7 +62,7 @@ export async function createMatch(data: unknown) {
   if (!admin) return { error: 'Sin permisos' }
 
   const parsed = matchInputSchema.safeParse(data)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const { matchNumber, group, round, homeTeam, awayTeam, kickoff, venue } = parsed.data
 
@@ -83,7 +83,7 @@ export async function updateMatch(id: string, data: unknown) {
   if (!admin) return { error: 'Sin permisos' }
 
   const parsed = matchInputSchema.safeParse(data)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const { matchNumber, group, round, homeTeam, awayTeam, kickoff, venue } = parsed.data
 

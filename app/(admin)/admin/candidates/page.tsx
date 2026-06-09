@@ -7,6 +7,7 @@ import {
 } from '@/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Trophy, UserRound } from 'lucide-react'
 
 export default async function AdminCandidatesPage() {
   const [champions, scorers] = await Promise.all([
@@ -39,6 +40,15 @@ export default async function AdminCandidatesPage() {
               </form>
             )
           })}
+          {champions.length === 0 && (
+            <div className="flex w-full items-start gap-3 rounded-2xl border border-dashed bg-card p-4 text-sm text-muted-foreground">
+              <Trophy className="mt-0.5 size-5 text-primary" strokeWidth={1.8} />
+              <p>
+                Agregá candidatos a campeón para que los jugadores elijan con menos errores de
+                tipeo.
+              </p>
+            </div>
+          )}
         </div>
         <form
           action={async (fd: FormData) => {
@@ -74,6 +84,15 @@ export default async function AdminCandidatesPage() {
               </form>
             )
           })}
+          {scorers.length === 0 && (
+            <div className="flex w-full items-start gap-3 rounded-2xl border border-dashed bg-card p-4 text-sm text-muted-foreground">
+              <UserRound className="mt-0.5 size-5 text-secondary" strokeWidth={1.8} />
+              <p>
+                Agregá candidatos a goleador para que el bonus se calcule contra opciones
+                consistentes.
+              </p>
+            </div>
+          )}
         </div>
         <form
           action={async (fd: FormData) => {

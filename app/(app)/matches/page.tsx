@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { MatchCard } from '@/components/match-card'
 import type { Match, Prediction } from '@/generated/prisma/client'
+import { CalendarDays } from 'lucide-react'
 
 const ROUND_LABELS: Record<string, string> = {
   GROUP: 'Fase de Grupos',
@@ -34,10 +35,17 @@ export default async function MatchesPage() {
 
   if (matches.length === 0) {
     return (
-      <div className="text-center py-16 space-y-3">
-        <div className="text-5xl">📅</div>
-        <h1 className="font-heading font-bold text-2xl">Sin partidos todavía</h1>
-        <p className="text-sm text-muted-foreground">Volvé pronto, los fixtures se cargan antes del torneo.</p>
+      <div className="rounded-3xl border bg-card px-6 py-14 text-center shadow-sm">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <CalendarDays size={28} strokeWidth={1.8} />
+        </div>
+        <div className="mx-auto mt-5 max-w-sm space-y-2">
+          <h1 className="font-heading text-2xl font-bold">Fixture en preparación</h1>
+          <p className="text-sm text-muted-foreground">
+            Cuando carguemos los partidos vas a poder pronosticar desde acá. Volvé pronto,
+            hermano.
+          </p>
+        </div>
       </div>
     )
   }

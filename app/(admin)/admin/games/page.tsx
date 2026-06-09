@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Match } from '@/generated/prisma/client'
+import { CalendarPlus } from 'lucide-react'
 
 export default async function AdminGamesPage() {
   const matches = await prisma.match.findMany({ orderBy: [{ kickoff: 'asc' }] })
@@ -69,7 +70,21 @@ export default async function AdminGamesPage() {
           )
         })}
         {matches.length === 0 && (
-          <p className="text-muted-foreground">No hay partidos cargados.</p>
+          <div className="rounded-3xl border border-dashed bg-card px-6 py-12 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <CalendarPlus size={24} strokeWidth={1.8} />
+            </div>
+            <div className="mx-auto mt-4 max-w-sm space-y-2">
+              <h2 className="font-heading text-xl font-bold">Todavía no hay partidos</h2>
+              <p className="text-sm text-muted-foreground">
+                Cargá el primer encuentro para habilitar pronósticos y empezar a armar el
+                calendario del Mundial.
+              </p>
+            </div>
+            <Button asChild className="mt-5">
+              <Link href="/admin/games/new">Agregar primer partido</Link>
+            </Button>
+          </div>
         )}
       </div>
     </div>

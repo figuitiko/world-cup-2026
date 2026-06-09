@@ -142,6 +142,58 @@ export async function deleteTopScorerCandidate(id: string) {
   revalidatePath('/picks')
 }
 
+export async function setPickForUser(userId: string, matchId: string, pick: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const parsed = resultSchema.safeParse(pick)
+  if (!parsed.success) return { error: 'Pick inválido' }
+
+  await prisma.prediction.upsert({
+    where: { userId_matchId: { userId, matchId } },
+    update: { pick: parsed.data },
+    create: { userId, matchId, pick: parsed.data },
+  })
+
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/leaderboard')
+}
+
+export async function autoAssignMissingPicks() {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const cutoff = new Date(Date.now() + 5 * 60 * 1000)
+
+  const [matches, users] = await Promise.all([
+    prisma.match.findMany({
+      where: { kickoff: { lte: cutoff }, homeTeam: { not: 'POR DEFINIR' } },
+    }),
+    prisma.user.findMany({
+      where: { isAdmin: false },
+      include: { predictions: { select: { matchId: true } } },
+    }),
+  ])
+
+  const options = ['HOME', 'DRAW', 'AWAY'] as const
+  let count = 0
+
+  for (const user of users) {
+    const picked = new Set(user.predictions.map(p => p.matchId))
+    for (const match of matches) {
+      if (!picked.has(match.id)) {
+        const pick = options[Math.floor(Math.random() * 3)]
+        await prisma.prediction.create({ data: { userId: user.id, matchId: match.id, pick } })
+        count++
+      }
+    }
+  }
+
+  revalidatePath('/matches')
+  revalidatePath('/leaderboard')
+  return { count }
+}
+
 export async function deleteMatch(id: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }

@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { hash } from 'bcryptjs'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 
@@ -17,11 +18,112 @@ const matchInputSchema = z.object({
   venue: z.string().min(1, 'Estadio requerido'),
 })
 
+const createUserSchema = z.object({
+  name: z.string().trim().min(2, 'Nombre requerido'),
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  password: z.string().min(8, 'La contraseña necesita al menos 8 caracteres'),
+  isAdmin: z.boolean(),
+})
+
+const updateUserSchema = z.object({
+  name: z.string().trim().min(2, 'Nombre requerido'),
+  email: z.string().trim().toLowerCase().email('Email inválido'),
+  password: z.string().optional(),
+  isAdmin: z.boolean(),
+})
+
 async function assertAdmin() {
   const session = await auth()
   if (!session) return null
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
   return user?.isAdmin ? user : null
+}
+
+export async function createUser(data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const parsed = createUserSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const password = await hash(parsed.data.password, 12)
+
+  try {
+    await prisma.user.create({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        password,
+        isAdmin: parsed.data.isAdmin,
+      },
+    })
+  } catch {
+    return { error: 'Este email ya está registrado' }
+  }
+
+  revalidatePath('/admin/users')
+  revalidatePath('/leaderboard')
+}
+
+export async function updateUser(id: string, data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const parsed = updateUserSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  if (admin.id === id && !parsed.data.isAdmin) {
+    return { error: 'No podés quitarte tus propios permisos de admin' }
+  }
+
+  const updateData: {
+    name: string
+    email: string
+    isAdmin: boolean
+    password?: string
+  } = {
+    name: parsed.data.name,
+    email: parsed.data.email,
+    isAdmin: parsed.data.isAdmin,
+  }
+
+  const newPassword = parsed.data.password?.trim()
+  if (newPassword) {
+    if (newPassword.length < 8) {
+      return { error: 'La contraseña necesita al menos 8 caracteres' }
+    }
+    updateData.password = await hash(newPassword, 12)
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id },
+      data: updateData,
+    })
+  } catch {
+    return { error: 'No pudimos actualizar el usuario' }
+  }
+
+  revalidatePath('/admin/users')
+  revalidatePath('/leaderboard')
+}
+
+export async function deleteUser(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  if (admin.id === id) {
+    return { error: 'No podés eliminar tu propio usuario' }
+  }
+
+  try {
+    await prisma.user.delete({ where: { id } })
+  } catch {
+    return { error: 'No pudimos eliminar el usuario' }
+  }
+
+  revalidatePath('/admin/users')
+  revalidatePath('/leaderboard')
 }
 
 export async function enterMatchResult(matchId: string, result: string) {

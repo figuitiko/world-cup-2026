@@ -15,9 +15,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b bg-amber-50">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-6">
           <span className="font-bold text-amber-700">Admin</span>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex flex-wrap gap-4 text-sm">
             <Link href="/admin/games" className="hover:underline">
               Partidos
+            </Link>
+            <Link href="/admin/users" className="hover:underline">
+              Usuarios
             </Link>
             <Link href="/admin/candidates" className="hover:underline">
               Candidatos

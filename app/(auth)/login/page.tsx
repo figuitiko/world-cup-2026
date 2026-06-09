@@ -50,6 +50,9 @@ export default function LoginPage() {
         <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
           Elegí ganador, empate o derrota. Sumá puntos. Escalá la tabla.
         </p>
+        <Button asChild variant="outline" size="sm" className="mt-2">
+          <Link href="/leaderboard">Ver tabla</Link>
+        </Button>
       </div>
 
       {/* Form */}

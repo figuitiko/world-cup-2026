@@ -7,12 +7,14 @@ export default async function PicksPage() {
   const session = await auth()
   const userId = session!.user.id
 
-  const [specialPick, firstMatch] = await Promise.all([
+  const [specialPick, firstMatch, championCandidates, scorerCandidates] = await Promise.all([
     prisma.specialPick.findUnique({ where: { userId } }),
     prisma.match.findFirst({
       where: { round: 'GROUP' },
       orderBy: { kickoff: 'asc' },
     }),
+    prisma.championCandidate.findMany({ orderBy: { name: 'asc' } }),
+    prisma.topScorerCandidate.findMany({ orderBy: { name: 'asc' } }),
   ])
 
   const locked = firstMatch ? firstMatch.kickoff <= new Date() : false
@@ -32,13 +34,13 @@ export default async function PicksPage() {
           <div className="text-2xl mb-1">🏆</div>
           <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">Campeón</p>
           <p className="text-sm font-bold text-amber-700 mt-1">+3 puntos</p>
-          <p className="text-[10px] text-amber-600 mt-0.5">Si acertás 1 de tus 3</p>
+          <p className="text-[10px] text-amber-600 mt-0.5">Si acertás el campeón</p>
         </div>
         <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-center">
           <div className="text-2xl mb-1">⚽</div>
           <p className="text-xs font-bold text-primary uppercase tracking-wide">Goleador</p>
           <p className="text-sm font-bold text-primary mt-1">+3 puntos</p>
-          <p className="text-[10px] text-primary/70 mt-0.5">Si acertás 1 de tus 3</p>
+          <p className="text-[10px] text-primary/70 mt-0.5">Si acertás el goleador</p>
         </div>
       </div>
 
@@ -50,6 +52,8 @@ export default async function PicksPage() {
           <SpecialPicksForm
             initialChampions={specialPick?.champions ?? []}
             initialScorers={specialPick?.topScorers ?? []}
+            championCandidates={championCandidates}
+            scorerCandidates={scorerCandidates}
             locked={locked}
           />
         </CardContent>

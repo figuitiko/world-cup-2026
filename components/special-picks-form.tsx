@@ -3,18 +3,21 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { saveSpecialPicks } from '@/actions/specialPicks'
 import { cn } from '@/lib/utils'
+
+interface ChampionCandidate { id: string; name: string }
+interface ScorerCandidate { id: string; name: string; country: string }
 
 interface Props {
   initialChampions: string[]
   initialScorers: string[]
+  championCandidates: ChampionCandidate[]
+  scorerCandidates: ScorerCandidate[]
   locked: boolean
 }
 
-function ProgressDots({ values, max = 3 }: { values: string[]; max?: number }) {
-  const filled = values.filter(Boolean).length
+function ProgressDots({ filled, max = 3 }: { filled: number; max?: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex gap-1">
@@ -28,24 +31,77 @@ function ProgressDots({ values, max = 3 }: { values: string[]; max?: number }) {
           />
         ))}
       </div>
-      <span className="text-xs text-muted-foreground tabular-nums">
-        {filled}/{max}
-      </span>
+      <span className="text-xs text-muted-foreground tabular-nums">{filled}/{max}</span>
     </div>
   )
 }
 
-export function SpecialPicksForm({ initialChampions, initialScorers, locked }: Props) {
-  const [champions, setChampions] = useState<string[]>(
-    initialChampions.length === 3 ? initialChampions : ['', '', '']
+function CandidateGrid({
+  candidates,
+  selected,
+  max,
+  onChange,
+  variant,
+}: {
+  candidates: { id: string; name: string; sub?: string }[]
+  selected: string[]
+  max: number
+  onChange: (v: string[]) => void
+  variant: 'amber' | 'primary'
+}) {
+  function toggle(name: string) {
+    if (selected.includes(name)) {
+      onChange(selected.filter(s => s !== name))
+    } else if (selected.length < max) {
+      onChange([...selected, name])
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {candidates.map(c => {
+        const isSelected = selected.includes(c.name)
+        const isFull = selected.length >= max && !isSelected
+        return (
+          <button
+            key={c.id}
+            type="button"
+            disabled={isFull}
+            onClick={() => toggle(c.name)}
+            className={cn(
+              'px-3 py-2 rounded-xl border text-sm font-semibold transition-all duration-150',
+              variant === 'amber' && isSelected && 'bg-amber-100 border-amber-400 text-amber-800 shadow-sm',
+              variant === 'primary' && isSelected && 'bg-primary/15 border-primary text-primary shadow-sm',
+              !isSelected && !isFull && 'border-border hover:border-muted-foreground bg-background',
+              isFull && 'opacity-30 cursor-not-allowed border-border',
+            )}
+          >
+            {c.name}
+            {c.sub && <span className="ml-1.5 text-xs opacity-60 font-normal">{c.sub}</span>}
+          </button>
+        )
+      })}
+    </div>
   )
-  const [scorers, setScorers] = useState<string[]>(
-    initialScorers.length === 3 ? initialScorers : ['', '', '']
-  )
+}
+
+export function SpecialPicksForm({
+  initialChampions,
+  initialScorers,
+  championCandidates,
+  scorerCandidates,
+  locked,
+}: Props) {
+  const [champions, setChampions] = useState<string[]>(initialChampions.slice(0, 3))
+  const [scorers, setScorers] = useState<string[]>(initialScorers.slice(0, 3))
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (champions.length !== 1 || scorers.length !== 1) {
+      toast.error('Seleccioná un campeón y un goleador')
+      return
+    }
     startTransition(async () => {
       const result = await saveSpecialPicks(champions, scorers)
       if (result?.error) {
@@ -71,10 +127,7 @@ export function SpecialPicksForm({ initialChampions, initialScorers, locked }: P
               </p>
               <div className="flex flex-wrap gap-2">
                 {initialChampions.filter(Boolean).map((c, i) => (
-                  <span
-                    key={i}
-                    className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-semibold"
-                  >
+                  <span key={i} className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-semibold">
                     {c}
                   </span>
                 ))}
@@ -86,10 +139,7 @@ export function SpecialPicksForm({ initialChampions, initialScorers, locked }: P
               </p>
               <div className="flex flex-wrap gap-2">
                 {initialScorers.filter(Boolean).map((s, i) => (
-                  <span
-                    key={i}
-                    className="bg-primary/10 border border-primary/20 text-primary text-sm px-3 py-1 rounded-full font-semibold"
-                  >
+                  <span key={i} className="bg-primary/10 border border-primary/20 text-primary text-sm px-3 py-1 rounded-full font-semibold">
                     {s}
                   </span>
                 ))}
@@ -105,71 +155,39 @@ export function SpecialPicksForm({ initialChampions, initialScorers, locked }: P
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Champions */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-heading font-bold text-lg flex items-center gap-2">
-            🏆 Campeones
-          </h3>
-          <ProgressDots values={champions} />
-        </div>
+        <h3 className="font-heading font-bold text-lg">🏆 Campeón</h3>
         <p className="text-xs text-muted-foreground">
-          Elegí 3 posibles campeones del torneo. Si acertás alguno, sumás +3 puntos.
+          Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.
         </p>
-        <div className="space-y-3">
-          {champions.map((c, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center shrink-0">
-                {i + 1}
-              </div>
-              <Input
-                value={c}
-                onChange={(e) => {
-                  const next = [...champions]
-                  next[i] = e.target.value
-                  setChampions(next)
-                }}
-                placeholder={`Campeón ${i + 1} — ej: Argentina`}
-                required
-                className="h-11"
-              />
-            </div>
-          ))}
-        </div>
+        <CandidateGrid
+          candidates={championCandidates}
+          selected={champions}
+          max={1}
+          onChange={setChampions}
+          variant="amber"
+        />
       </div>
 
       {/* Scorers */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-heading font-bold text-lg flex items-center gap-2">
-            ⚽ Goleadores
-          </h3>
-          <ProgressDots values={scorers} />
-        </div>
+        <h3 className="font-heading font-bold text-lg">⚽ Goleador</h3>
         <p className="text-xs text-muted-foreground">
-          Elegí 3 posibles goleadores del torneo. Si acertás alguno, sumás +3 puntos.
+          Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.
         </p>
-        <div className="space-y-3">
-          {scorers.map((s, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
-                {i + 1}
-              </div>
-              <Input
-                value={s}
-                onChange={(e) => {
-                  const next = [...scorers]
-                  next[i] = e.target.value
-                  setScorers(next)
-                }}
-                placeholder={`Goleador ${i + 1} — ej: Mbappé`}
-                required
-                className="h-11"
-              />
-            </div>
-          ))}
-        </div>
+        <CandidateGrid
+          candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
+          selected={scorers}
+          max={1}
+          onChange={setScorers}
+          variant="primary"
+        />
       </div>
 
-      <Button type="submit" className="w-full h-12 text-base font-bold" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full h-12 text-base font-bold"
+        disabled={isPending || champions.length !== 1 || scorers.length !== 1}
+      >
         {isPending ? 'Guardando...' : 'Guardar picks especiales'}
       </Button>
     </form>

@@ -19,4 +19,21 @@ describe('LoginPage', () => {
 
     expect(leaderboardLink).toHaveAttribute('href', '/leaderboard')
   })
+
+  it('renders the real TRIONDA ball image as the hero visual', () => {
+    render(<LoginPage />)
+
+    const triondaImage = screen.getByAltText(/balón trionda/i)
+
+    expect(triondaImage).toHaveAttribute('src', expect.stringContaining('trionda-ball.png'))
+  })
+
+  it('uses a blue secondary leaderboard CTA to echo the TRIONDA blue panel', () => {
+    render(<LoginPage />)
+
+    const leaderboardLink = screen.getByRole('link', { name: /ver tabla/i })
+
+    expect(leaderboardLink).toHaveClass('border-secondary')
+    expect(leaderboardLink).toHaveClass('text-secondary')
+  })
 })

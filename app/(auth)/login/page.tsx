@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -32,33 +33,76 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-hidden bg-background">
       {/* Brand bar */}
-      <div className="bg-primary px-4 py-3">
-        <p className="text-primary-foreground font-heading font-bold text-center text-base tracking-widest uppercase">
+      <div className="relative bg-primary px-4 py-3 text-primary-foreground">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-1 bg-[linear-gradient(90deg,var(--primary)_0%,var(--primary)_33%,var(--secondary)_33%,var(--secondary)_66%,var(--destructive)_66%,var(--destructive)_100%)]"
+        />
+        <p className="relative z-10 text-center font-heading text-base font-bold uppercase tracking-widest">
           ⚽ Mundial Picks 2026
         </p>
       </div>
 
       {/* Hero */}
-      <div className="bg-primary/5 border-b px-4 py-10 text-center space-y-3">
-        <h1 className="font-heading font-bold text-3xl sm:text-4xl leading-tight">
-          Pronosticá el Mundial.
-          <br />
-          <span className="text-primary">Ganale a tus amigos.</span>
-        </h1>
-        <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-          Elegí ganador, empate o derrota. Sumá puntos. Escalá la tabla.
-        </p>
-        <Button asChild variant="outline" size="sm" className="mt-2">
-          <Link href="/leaderboard">Ver tabla</Link>
-        </Button>
-      </div>
+      <section className="relative isolate border-b bg-white px-4 py-12 text-center sm:py-16">
+        <div
+          aria-hidden="true"
+          className="absolute -left-20 top-10 -z-10 h-44 w-72 rotate-[-18deg] rounded-[999px] border-[18px] border-primary/20"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 bottom-6 -z-10 h-44 w-80 rotate-[22deg] rounded-[999px] border-[18px] border-secondary/20"
+        />
+        <div className="mx-auto max-w-xl space-y-4">
+          <div className="relative mx-auto h-32 w-32 sm:h-40 sm:w-40">
+            <Image
+              src="/trionda-ball.png"
+              alt="Balón TRIONDA del Mundial 2026"
+              fill
+              priority
+              sizes="(max-width: 640px) 128px, 160px"
+              className="object-contain drop-shadow-2xl"
+            />
+          </div>
+          <div className="mx-auto flex w-fit items-center gap-1.5 rounded-full border border-border bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="h-2 w-2 rounded-full bg-secondary" />
+            <span className="h-2 w-2 rounded-full bg-destructive" />
+            TRIONDA Challenge
+          </div>
+          <h1 className="font-heading text-4xl font-bold leading-none text-foreground sm:text-5xl">
+            Pronosticá el Mundial.
+            <br />
+            <span className="bg-[linear-gradient(90deg,var(--primary),var(--secondary),var(--destructive))] bg-clip-text text-transparent">
+              Ganale a tus amigos.
+            </span>
+          </h1>
+          <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Elegí ganador, empate o derrota. Sumá puntos. Escalá la tabla.
+          </p>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="mt-2 border-secondary bg-white text-secondary hover:bg-secondary hover:text-secondary-foreground"
+          >
+            <Link href="/leaderboard">Ver tabla</Link>
+          </Button>
+        </div>
+      </section>
 
       {/* Form */}
-      <div className="flex-1 flex items-start justify-center p-6 pt-8">
-        <div className="w-full max-w-sm space-y-6">
-          <h2 className="font-heading font-bold text-xl text-center">Ingresá a tu cuenta</h2>
+      <div className="flex flex-1 items-start justify-center p-6 pt-8">
+        <div className="w-full max-w-sm space-y-6 rounded-3xl border bg-card/95 p-5 shadow-xl shadow-primary/10">
+          <div className="space-y-1 text-center">
+            <div
+              aria-hidden="true"
+              className="mx-auto mb-3 h-1.5 w-20 rounded-full bg-[linear-gradient(90deg,var(--primary),var(--secondary),var(--destructive))]"
+            />
+            <h2 className="font-heading text-xl font-bold">Ingresá a tu cuenta</h2>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -69,7 +113,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 autoComplete="email"
-                className="h-11"
+                className="h-11 border-border bg-white"
               />
             </div>
             <div className="space-y-2">
@@ -80,7 +124,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 autoComplete="current-password"
-                className="h-11"
+                className="h-11 border-border bg-white"
               />
             </div>
             {error && (
@@ -90,7 +134,7 @@ export default function LoginPage() {
             )}
             <Button
               type="submit"
-              className="w-full h-12 text-base font-bold"
+              className="h-12 w-full text-base font-bold shadow-lg shadow-primary/20"
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}

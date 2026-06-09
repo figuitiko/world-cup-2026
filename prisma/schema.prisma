@@ -78,3 +78,14 @@ model TournamentResult {
   topScorer String?
   updatedAt DateTime @updatedAt
 }
+
+model ChampionCandidate {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model TopScorerCandidate {
+  id      String @id @default(cuid())
+  name    String @unique
+  country String
+}

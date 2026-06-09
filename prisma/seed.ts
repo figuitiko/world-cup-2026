@@ -156,6 +156,19 @@ async function main() {
   })
   console.log('Admin user created: admin@mundial.local')
 
+  await prisma.user.upsert({
+    where: { email: 'admin-monchi@mundial.local' },
+    update: {},
+    create: {
+      name: 'Monchi',
+      email: 'admin-monchi@mundial.local',
+      password: await hash(adminPassword, 12),
+      isAdmin: true,
+      leagueId: league.id,
+    },
+  })
+  console.log('Admin user created: admin-monchi@mundial.local')
+
   for (const m of GROUP_MATCHES) {
     await prisma.match.upsert({
       where: { matchNumber: m.matchNumber },
@@ -184,6 +197,35 @@ async function main() {
   if (count === 0) {
     await prisma.tournamentResult.create({ data: {} })
   }
+
+  const championCandidates = [
+    'Francia', 'Brasil', 'Inglaterra', 'Argentina',
+    'España', 'Alemania', 'Portugal', 'Países Bajos',
+    'Marruecos', 'Estados Unidos',
+  ]
+  await prisma.championCandidate.createMany({
+    data: championCandidates.map(name => ({ name })),
+    skipDuplicates: true,
+  })
+  console.log(`Seeded ${championCandidates.length} champion candidates`)
+
+  const topScorerCandidates = [
+    { name: 'Kylian Mbappé', country: 'Francia' },
+    { name: 'Vinicius Jr', country: 'Brasil' },
+    { name: 'Harry Kane', country: 'Inglaterra' },
+    { name: 'Lionel Messi', country: 'Argentina' },
+    { name: 'Erling Haaland', country: 'Noruega' },
+    { name: 'Jude Bellingham', country: 'Inglaterra' },
+    { name: 'Lamine Yamal', country: 'España' },
+    { name: 'Julián Álvarez', country: 'Argentina' },
+    { name: 'Antoine Griezmann', country: 'Francia' },
+    { name: 'Robert Lewandowski', country: 'Polonia' },
+  ]
+  await prisma.topScorerCandidate.createMany({
+    data: topScorerCandidates,
+    skipDuplicates: true,
+  })
+  console.log(`Seeded ${topScorerCandidates.length} top scorer candidates`)
 
   console.log('Done.')
 }

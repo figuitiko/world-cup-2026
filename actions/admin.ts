@@ -100,6 +100,48 @@ export async function updateMatch(id: string, data: unknown) {
   revalidatePath('/matches')
 }
 
+export async function addChampionCandidate(name: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  if (!name.trim()) return { error: 'Nombre requerido' }
+  try {
+    await prisma.championCandidate.create({ data: { name: name.trim() } })
+  } catch {
+    return { error: 'Ya existe esa selección' }
+  }
+  revalidatePath('/admin/candidates')
+  revalidatePath('/picks')
+}
+
+export async function deleteChampionCandidate(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  await prisma.championCandidate.delete({ where: { id } })
+  revalidatePath('/admin/candidates')
+  revalidatePath('/picks')
+}
+
+export async function addTopScorerCandidate(name: string, country: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  if (!name.trim() || !country.trim()) return { error: 'Nombre y país requeridos' }
+  try {
+    await prisma.topScorerCandidate.create({ data: { name: name.trim(), country: country.trim() } })
+  } catch {
+    return { error: 'Ya existe ese jugador' }
+  }
+  revalidatePath('/admin/candidates')
+  revalidatePath('/picks')
+}
+
+export async function deleteTopScorerCandidate(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  await prisma.topScorerCandidate.delete({ where: { id } })
+  revalidatePath('/admin/candidates')
+  revalidatePath('/picks')
+}
+
 export async function deleteMatch(id: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }

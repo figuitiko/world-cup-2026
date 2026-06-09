@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - paragraph [ref=e5]: ⚽ Mundial Picks 2026
+    - generic [ref=e9]:
+      - img "Balón TRIONDA del Mundial 2026" [ref=e11]
+      - generic [ref=e12]: TRIONDA Challenge
+      - heading "Pronosticá el Mundial. Ganale a tus amigos." [level=1] [ref=e16]:
+        - text: Pronosticá el Mundial.
+        - text: Ganale a tus amigos.
+      - paragraph [ref=e17]: Elegí ganador, empate o derrota. Sumá puntos. Escalá la tabla.
+      - link "Ver tabla" [ref=e18] [cursor=pointer]:
+        - /url: /leaderboard
+    - generic [ref=e20]:
+      - heading "Ingresá a tu cuenta" [level=2] [ref=e23]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - text: Email
+          - textbox "Email" [ref=e26]
+        - generic [ref=e27]:
+          - text: Contraseña
+          - textbox "Contraseña" [ref=e28]
+        - button "Entrar" [ref=e29]
+      - paragraph [ref=e30]:
+        - text: ¿No tenés cuenta?
+        - link "Registrate" [ref=e31] [cursor=pointer]:
+          - /url: /register
+  - button "Open Next.js Dev Tools" [ref=e37] [cursor=pointer]:
+    - img [ref=e38]
+  - alert [ref=e41]

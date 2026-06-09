@@ -6,8 +6,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 
 const picksSchema = z.object({
-  champions: z.array(z.string().min(1)).length(3),
-  topScorers: z.array(z.string().min(1)).length(3),
+  champions: z.array(z.string().min(1)).length(1),
+  topScorers: z.array(z.string().min(1)).length(1),
 })
 
 export async function saveSpecialPicks(champions: string[], topScorers: string[]) {
@@ -16,7 +16,7 @@ export async function saveSpecialPicks(champions: string[], topScorers: string[]
 
   const parsed = picksSchema.safeParse({ champions, topScorers })
   if (!parsed.success) {
-    return { error: 'Seleccioná exactamente 3 campeones y 3 goleadores' }
+    return { error: 'Seleccioná un campeón y un goleador' }
   }
 
   const firstMatch = await prisma.match.findFirst({

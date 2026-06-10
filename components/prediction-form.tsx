@@ -10,9 +10,16 @@ interface Props {
   homeTeam: string
   awayTeam: string
   currentPick: string | null
+  variant?: 'default' | 'compact'
 }
 
-export function PredictionForm({ matchId, homeTeam, awayTeam, currentPick }: Props) {
+export function PredictionForm({
+  matchId,
+  homeTeam,
+  awayTeam,
+  currentPick,
+  variant = 'default',
+}: Props) {
   const [selected, setSelected] = useState<string | null>(currentPick)
   const [isPending, startTransition] = useTransition()
 
@@ -29,11 +36,47 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, currentPick }: Pro
     })
   }
 
+  const isCompact = variant === 'compact'
   const options = [
-    { value: 'HOME', label: homeTeam, sublabel: 'Local' },
+    { value: 'HOME', label: isCompact ? `Gana ${homeTeam}` : homeTeam, sublabel: 'Local' },
     { value: 'DRAW', label: 'Empate', sublabel: '—' },
-    { value: 'AWAY', label: awayTeam, sublabel: 'Visitante' },
+    { value: 'AWAY', label: isCompact ? `Gana ${awayTeam}` : awayTeam, sublabel: 'Visitante' },
   ]
+
+  if (isCompact) {
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {options.map((opt) => {
+            const isSelected = selected === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => save(opt.value)}
+                disabled={isPending}
+                aria-pressed={isSelected}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs font-bold transition-all',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                  isSelected
+                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5'
+                )}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+        {isPending && (
+          <p className="text-center text-[11px] text-muted-foreground animate-pulse">
+            Guardando...
+          </p>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -49,6 +92,7 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, currentPick }: Pro
               type="button"
               onClick={() => save(opt.value)}
               disabled={isPending}
+              aria-pressed={isSelected}
               className={cn(
                 'flex flex-col items-center gap-1 py-5 px-2 rounded-xl border-2 font-medium text-center',
                 'transition-all duration-150 cursor-pointer select-none',

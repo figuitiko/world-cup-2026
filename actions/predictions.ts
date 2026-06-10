@@ -25,5 +25,4 @@ export async function createOrUpdatePrediction(matchId: string, pick: string) {
   })
 
   revalidatePath('/matches')
-  revalidatePath(`/matches/${matchId}`)
 }

@@ -1,113 +1,125 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { MatchCard } from '@/components/match-card'
+import Link from 'next/link'
 import type { Match, Prediction } from '@/generated/prisma/client'
-import { CalendarDays } from 'lucide-react'
 
-const ROUND_LABELS: Record<string, string> = {
-  GROUP: 'Fase de Grupos',
-  R32: 'Ronda de 32',
-  R16: 'Octavos de Final',
-  QF: 'Cuartos de Final',
-  SF: 'Semifinales',
-  '3RD': 'Tercer Puesto',
-  FINAL: 'Final',
-}
+const ROUNDS = [
+  { key: 'GROUP', label: 'Grupos' },
+  { key: 'R32', label: '32avos' },
+  { key: 'R16', label: 'Octavos' },
+  { key: 'QF', label: 'Cuartos' },
+  { key: 'SF', label: 'Semis' },
+  { key: '3RD', label: '3er puesto' },
+  { key: 'FINAL', label: 'Final' },
+]
 
-const ROUND_ORDER = ['GROUP', 'R32', 'R16', 'QF', 'SF', '3RD', 'FINAL']
+const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
 
-export default async function MatchesPage() {
+export default async function MatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ round?: string; group?: string }>
+}) {
   const session = await auth()
   const userId = session!.user.id
+  const { round: rawRound, group: rawGroup } = await searchParams
+
+  const totalMatches = await prisma.match.count()
+
+  if (totalMatches === 0) {
+    return (
+      <div className="rounded-3xl border bg-card px-6 py-14 text-center shadow-sm">
+        <p className="font-heading text-2xl font-bold">Fixture en preparación</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Cuando carguemos los partidos vas a poder pronosticar desde acá. Volvé pronto, hermano.
+        </p>
+      </div>
+    )
+  }
+
+  // Detect which rounds actually have matches
+  const existingRounds = await prisma.match.findMany({
+    select: { round: true },
+    distinct: ['round'],
+  })
+  const existingRoundKeys = new Set(existingRounds.map((r: { round: string }) => r.round))
+
+  const activeRound = rawRound && existingRoundKeys.has(rawRound) ? rawRound : 'GROUP'
+  const activeGroup = activeRound === 'GROUP' ? (rawGroup ?? null) : null
 
   const [matches, predictions] = await Promise.all([
-    prisma.match.findMany({ orderBy: [{ kickoff: 'asc' }, { matchNumber: 'asc' }] }),
+    prisma.match.findMany({
+      where: {
+        round: activeRound,
+        ...(activeRound === 'GROUP' && activeGroup ? { group: activeGroup } : {}),
+      },
+      orderBy: [{ kickoff: 'asc' }, { matchNumber: 'asc' }],
+    }),
     prisma.prediction.findMany({ where: { userId } }),
   ])
 
   const predictionMap = new Map(predictions.map((p: Prediction) => [p.matchId, p]))
 
-  const byRound = new Map<string, typeof matches>()
-  for (const match of matches) {
-    if (!byRound.has(match.round)) byRound.set(match.round, [])
-    byRound.get(match.round)!.push(match)
-  }
-
-  if (matches.length === 0) {
-    return (
-      <div className="rounded-3xl border bg-card px-6 py-14 text-center shadow-sm">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <CalendarDays size={28} strokeWidth={1.8} />
-        </div>
-        <div className="mx-auto mt-5 max-w-sm space-y-2">
-          <h1 className="font-heading text-2xl font-bold">Fixture en preparación</h1>
-          <p className="text-sm text-muted-foreground">
-            Cuando carguemos los partidos vas a poder pronosticar desde acá. Volvé pronto,
-            hermano.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <h1 className="font-heading font-bold text-3xl">Partidos</h1>
 
-      {ROUND_ORDER.filter((r) => byRound.has(r)).map((round) => {
-        const roundMatches = byRound.get(round)!
+      {/* Round tabs */}
+      <div className="flex flex-wrap gap-1.5">
+        {ROUNDS.filter(r => existingRoundKeys.has(r.key)).map(r => (
+          <Link
+            key={r.key}
+            href={`/matches?round=${r.key}`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              activeRound === r.key
+                ? 'bg-foreground text-background'
+                : 'border hover:border-muted-foreground'
+            }`}
+          >
+            {r.label}
+          </Link>
+        ))}
+      </div>
 
-        if (round === 'GROUP') {
-          const byGroup = new Map<string, typeof matches>()
-          for (const m of roundMatches) {
-            const g = m.group ?? '?'
-            if (!byGroup.has(g)) byGroup.set(g, [])
-            byGroup.get(g)!.push(m)
-          }
-          return (
-            <section key={round}>
-              <h2 className="font-heading font-bold text-xl uppercase tracking-wide mb-4 flex items-center gap-2.5">
-                <span className="w-1 h-6 bg-primary rounded-full" />
-                {ROUND_LABELS[round]}
-              </h2>
-              <div className="space-y-6">
-                {Array.from(byGroup.entries())
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([group, gMatches]) => (
-                    <div key={group}>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 pl-1">
-                        Grupo {group}
-                      </h3>
-                      <div className="space-y-2">
-                        {gMatches.map((m: Match) => (
-                          <MatchCard
-                            key={m.id}
-                            match={m}
-                            prediction={predictionMap.get(m.id) ?? null}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </section>
-          )
-        }
+      {/* Group sub-tabs */}
+      {activeRound === 'GROUP' && (
+        <div className="flex flex-wrap gap-1.5">
+          <Link
+            href="/matches?round=GROUP"
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              !activeGroup ? 'bg-primary text-primary-foreground' : 'border hover:border-muted-foreground'
+            }`}
+          >
+            Todos
+          </Link>
+          {GROUPS.map(g => (
+            <Link
+              key={g}
+              href={`/matches?round=GROUP&group=${g}`}
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold transition-colors ${
+                activeGroup === g
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border hover:border-muted-foreground'
+              }`}
+            >
+              {g}
+            </Link>
+          ))}
+        </div>
+      )}
 
-        return (
-          <section key={round}>
-            <h2 className="font-heading font-bold text-xl uppercase tracking-wide mb-4 flex items-center gap-2.5">
-              <span className="w-1 h-6 bg-primary rounded-full" />
-              {ROUND_LABELS[round]}
-            </h2>
-            <div className="space-y-2">
-              {roundMatches.map((m: Match) => (
-                <MatchCard key={m.id} match={m} prediction={predictionMap.get(m.id) ?? null} />
-              ))}
-            </div>
-          </section>
-        )
-      })}
+      {/* Match list */}
+      <div className="space-y-2">
+        {matches.map((m: Match) => (
+          <MatchCard key={m.id} match={m} prediction={predictionMap.get(m.id) ?? null} />
+        ))}
+        {matches.length === 0 && (
+          <p className="text-muted-foreground text-sm py-4">
+            No hay partidos disponibles para esta fase.
+          </p>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,27 +1,54 @@
 import { prisma } from '@/lib/db'
-import { setPickForUser, autoAssignMissingPicks } from '@/actions/admin'
+import { autoAssignMissingPicks } from '@/actions/admin'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { MatchPickList } from './pick-list'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
+const ROUNDS = [
+  { key: 'GROUP', label: 'Grupos' },
+  { key: 'R32', label: '32avos' },
+  { key: 'R16', label: 'Octavos' },
+  { key: 'QF', label: 'Cuartos' },
+  { key: 'SF', label: 'Semis' },
+  { key: '3RD', label: '3er puesto' },
+  { key: 'FINAL', label: 'Final' },
+]
+
+const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+
+function buildUrl(params: Record<string, string | undefined>) {
+  const p = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v) p.set(k, v)
+  }
+  return `/admin/user-picks?${p.toString()}`
+}
 
 export default async function AdminUserPicksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ userId?: string }>
+  searchParams: Promise<{ userId?: string; round?: string; group?: string }>
 }) {
-  const { userId } = await searchParams
+  const { userId, round: rawRound, group: rawGroup } = await searchParams
+  const activeRound = rawRound ?? 'GROUP'
+  const activeGroup = activeRound === 'GROUP' ? (rawGroup ?? null) : null
 
   const users = await prisma.user.findMany({
     orderBy: [{ isAdmin: 'desc' }, { name: 'asc' }],
   })
-
   const selectedUser = userId ? users.find(u => u.id === userId) : null
 
-  const matches: (Match & { predictions: Prediction[] })[] = userId
+  const shouldFetchMatches =
+    userId && (activeRound !== 'GROUP' || activeGroup !== null)
+
+  const matches: (Match & { predictions: Prediction[] })[] = shouldFetchMatches
     ? await prisma.match.findMany({
-        where: { homeTeam: { not: 'POR DEFINIR' } },
+        where: {
+          homeTeam: { not: 'POR DEFINIR' },
+          round: activeRound,
+          ...(activeRound === 'GROUP' && activeGroup ? { group: activeGroup } : {}),
+        },
         orderBy: { kickoff: 'asc' },
         include: { predictions: { where: { userId } } },
       })
@@ -29,6 +56,7 @@ export default async function AdminUserPicksPage({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Picks de usuarios</h1>
         <form
@@ -48,7 +76,7 @@ export default async function AdminUserPicksPage({
         {users.map(u => (
           <Link
             key={u.id}
-            href={`/admin/user-picks?userId=${u.id}`}
+            href={buildUrl({ userId: u.id, round: activeRound, group: activeGroup ?? undefined })}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
               u.id === userId
                 ? 'bg-primary text-primary-foreground border-primary'
@@ -71,72 +99,75 @@ export default async function AdminUserPicksPage({
         ))}
       </div>
 
-      {/* Picks for selected user */}
       {selectedUser && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground font-medium">
-            Picks de {selectedUser.name}
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted-foreground">
+            Picks de <span className="text-foreground">{selectedUser.name}</span>
           </p>
-          {matches.map(match => {
-            const current = match.predictions[0]?.pick ?? null
 
-            return (
-              <div key={match.id} className="flex items-start justify-between gap-4 p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">
-                    {match.homeTeam} vs {match.awayTeam}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(match.kickoff).toLocaleDateString('es-AR', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                  {current && (
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {current === 'HOME'
-                        ? match.homeTeam
-                        : current === 'AWAY'
-                          ? match.awayTeam
-                          : 'Empate'}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-                  {(['HOME', 'DRAW', 'AWAY'] as const).map(pick => {
-                    async function setPick() {
-                      'use server'
-                      await setPickForUser(selectedUser!.id, match.id, pick)
-                    }
-                    const label =
-                      pick === 'HOME' ? match.homeTeam : pick === 'AWAY' ? match.awayTeam : 'Empate'
-                    return (
-                      <form key={pick} action={setPick}>
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant={current === pick ? 'default' : 'outline'}
-                          className="text-xs"
-                        >
-                          {label}
-                        </Button>
-                      </form>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-          {matches.length === 0 && (
-            <p className="text-muted-foreground text-sm">No hay partidos disponibles.</p>
+          {/* Round tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {ROUNDS.map(r => (
+              <Link
+                key={r.key}
+                href={buildUrl({ userId, round: r.key })}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeRound === r.key
+                    ? 'bg-foreground text-background'
+                    : 'border hover:border-muted-foreground'
+                }`}
+              >
+                {r.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Group sub-tabs (only for GROUP round) */}
+          {activeRound === 'GROUP' && (
+            <div className="flex flex-wrap gap-1.5">
+              {GROUPS.map(g => (
+                <Link
+                  key={g}
+                  href={buildUrl({ userId, round: 'GROUP', group: g })}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold transition-colors ${
+                    activeGroup === g
+                      ? 'bg-primary text-primary-foreground'
+                      : 'border hover:border-muted-foreground'
+                  }`}
+                >
+                  {g}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Prompt to pick a group */}
+          {activeRound === 'GROUP' && !activeGroup && (
+            <p className="text-sm text-muted-foreground py-4">
+              Seleccioná un grupo para ver los partidos.
+            </p>
+          )}
+
+          {/* Match list */}
+          {shouldFetchMatches && (
+            <MatchPickList
+              userId={userId!}
+              matches={matches.map((m: Match & { predictions: Prediction[] }) => ({
+                id: m.id,
+                homeTeam: m.homeTeam,
+                awayTeam: m.awayTeam,
+                kickoff: m.kickoff,
+                currentPick: (m.predictions[0]?.pick ?? null) as 'HOME' | 'DRAW' | 'AWAY' | null,
+              }))}
+            />
           )}
         </div>
       )}
 
       {!selectedUser && (
-        <p className="text-muted-foreground text-sm">Seleccioná un usuario para ver y editar sus picks.</p>
+        <p className="text-muted-foreground text-sm">
+          Seleccioná un usuario para ver y editar sus picks.
+        </p>
       )}
     </div>
   )

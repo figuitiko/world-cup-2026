@@ -5,6 +5,7 @@ import { PredictionForm } from '@/components/prediction-form'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { BackButton } from '@/components/back-button'
 
 const ROUND_LABELS: Record<string, string> = {
   GROUP: 'Fase de Grupos',
@@ -54,6 +55,7 @@ export default async function MatchDetailPage({
 
   return (
     <div className="space-y-4">
+      <BackButton label="Partidos" />
       <Card className="overflow-hidden">
         {/* Stage badge */}
         <div className="bg-primary/5 border-b px-4 py-2 flex items-center justify-between">

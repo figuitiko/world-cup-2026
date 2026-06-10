@@ -14,8 +14,7 @@ export default async function AdminUserPicksPage({
   const { userId } = await searchParams
 
   const users = await prisma.user.findMany({
-    where: { isAdmin: false },
-    orderBy: { name: 'asc' },
+    orderBy: [{ isAdmin: 'desc' }, { name: 'asc' }],
   })
 
   const selectedUser = userId ? users.find(u => u.id === userId) : null
@@ -50,13 +49,24 @@ export default async function AdminUserPicksPage({
           <Link
             key={u.id}
             href={`/admin/user-picks?userId=${u.id}`}
-            className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
               u.id === userId
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'hover:border-muted-foreground'
             }`}
           >
-            {u.name}
+            <span>{u.name}</span>
+            {u.isAdmin && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  u.id === userId
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-secondary/10 text-secondary'
+                }`}
+              >
+                Admin
+              </span>
+            )}
           </Link>
         ))}
       </div>

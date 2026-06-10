@@ -8,6 +8,7 @@ vi.mock('@/lib/db', () => ({
     },
     topScorerCandidate: { findMany: vi.fn() },
     specialPick: { upsert: vi.fn() },
+    specialPickLock: { upsert: vi.fn() },
   },
 }))
 

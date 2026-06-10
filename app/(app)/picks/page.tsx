@@ -7,7 +7,7 @@ export default async function PicksPage() {
   const session = await auth()
   const userId = session!.user.id
 
-  const [specialPick, firstMatch, championCandidates, scorerCandidates] = await Promise.all([
+  const [specialPick, firstMatch, championCandidates, scorerCandidates, specialPickLock] = await Promise.all([
     prisma.specialPick.findUnique({ where: { userId } }),
     prisma.match.findFirst({
       where: { round: 'GROUP' },
@@ -15,6 +15,7 @@ export default async function PicksPage() {
     }),
     prisma.championCandidate.findMany({ orderBy: { name: 'asc' } }),
     prisma.topScorerCandidate.findMany({ orderBy: { name: 'asc' } }),
+    prisma.specialPickLock.findUnique({ where: { id: 'global' } }),
   ])
 
   const locked = firstMatch ? firstMatch.kickoff <= new Date() : false
@@ -55,6 +56,8 @@ export default async function PicksPage() {
             championCandidates={championCandidates}
             scorerCandidates={scorerCandidates}
             locked={locked}
+            championLocked={Boolean(specialPickLock?.championLockedAt)}
+            topScorerLocked={Boolean(specialPickLock?.topScorerLockedAt)}
           />
         </CardContent>
       </Card>

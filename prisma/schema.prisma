@@ -72,6 +72,14 @@ model SpecialPick {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+
+model SpecialPickLock {
+  id                String    @id @default("global")
+  championLockedAt  DateTime?
+  topScorerLockedAt DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
 model TournamentResult {
   id        String   @id @default(cuid())
   champion  String?

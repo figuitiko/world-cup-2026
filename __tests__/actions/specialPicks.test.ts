@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 vi.mock('@/lib/db', () => ({
   prisma: {
     match: { findFirst: vi.fn() },
-    specialPick: { upsert: vi.fn() },
+    specialPick: { findUnique: vi.fn(), upsert: vi.fn() },
+    specialPickLock: { findUnique: vi.fn() },
   },
 }))
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
@@ -14,7 +15,9 @@ import { auth } from '@/auth'
 
 const mockedAuth = auth as Mock
 const mockedFindFirstMatch = prisma.match.findFirst as Mock
+const mockedFindSpecialPick = prisma.specialPick.findUnique as Mock
 const mockedUpsertSpecialPick = prisma.specialPick.upsert as Mock
+const mockedFindLock = prisma.specialPickLock.findUnique as Mock
 
 const futureKickoff = new Date(Date.now() + 1000 * 60 * 60 * 24)
 const pastKickoff = new Date(Date.now() - 1000)
@@ -24,6 +27,8 @@ describe('saveSpecialPicks', () => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({ user: { id: 'u1' } })
     mockedFindFirstMatch.mockResolvedValue({ kickoff: futureKickoff })
+    mockedFindSpecialPick.mockResolvedValue(null)
+    mockedFindLock.mockResolvedValue(null)
   })
 
   it('saves when exactly one champion and one scorer are selected', async () => {

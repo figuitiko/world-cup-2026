@@ -311,6 +311,7 @@ export async function autoAssignMissingTopScorers() {
     return { error: 'No hay goleadores candidatos cargados' }
   }
 
+  const lockedAt = new Date()
   let count = 0
 
   for (const user of users) {
@@ -328,6 +329,12 @@ export async function autoAssignMissingTopScorers() {
     })
     count++
   }
+
+  await prisma.specialPickLock.upsert({
+    where: { id: 'global' },
+    update: { topScorerLockedAt: lockedAt },
+    create: { id: 'global', topScorerLockedAt: lockedAt },
+  })
 
   revalidatePath('/admin/user-picks')
   revalidatePath('/leaderboard')
@@ -350,6 +357,7 @@ export async function autoAssignMissingChampions() {
     return { error: 'No hay selecciones candidatas cargadas' }
   }
 
+  const lockedAt = new Date()
   let count = 0
 
   for (const user of users) {
@@ -367,6 +375,12 @@ export async function autoAssignMissingChampions() {
     })
     count++
   }
+
+  await prisma.specialPickLock.upsert({
+    where: { id: 'global' },
+    update: { championLockedAt: lockedAt },
+    create: { id: 'global', championLockedAt: lockedAt },
+  })
 
   revalidatePath('/admin/user-picks')
   revalidatePath('/leaderboard')

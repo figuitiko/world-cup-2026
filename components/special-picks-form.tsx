@@ -15,6 +15,8 @@ interface Props {
   championCandidates: ChampionCandidate[]
   scorerCandidates: ScorerCandidate[]
   locked: boolean
+  championLocked?: boolean
+  topScorerLocked?: boolean
 }
 
 function CandidateGrid({
@@ -23,14 +25,17 @@ function CandidateGrid({
   max,
   onChange,
   variant,
+  disabled = false,
 }: {
   candidates: { id: string; name: string; sub?: string }[]
   selected: string[]
   max: number
   onChange: (v: string[]) => void
   variant: 'amber' | 'primary'
+  disabled?: boolean
 }) {
   function toggle(name: string) {
+    if (disabled) return
     if (selected.includes(name)) {
       onChange(selected.filter(s => s !== name))
     } else if (selected.length < max) {
@@ -43,19 +48,21 @@ function CandidateGrid({
       {candidates.map(c => {
         const isSelected = selected.includes(c.name)
         const isFull = selected.length >= max && !isSelected
+        const isDisabled = disabled || isFull
         return (
           <button
             key={c.id}
             type="button"
-            disabled={isFull}
+            disabled={isDisabled}
             onClick={() => toggle(c.name)}
             aria-pressed={isSelected}
             className={cn(
               'px-3 py-2 rounded-xl border text-sm font-semibold transition-all duration-150',
               variant === 'amber' && isSelected && 'bg-amber-100 border-amber-400 text-amber-800 shadow-sm',
               variant === 'primary' && isSelected && 'bg-primary/15 border-primary text-primary shadow-sm',
-              !isSelected && !isFull && 'border-border hover:border-muted-foreground bg-background',
-              isFull && 'opacity-30 cursor-not-allowed border-border',
+              !isSelected && !isDisabled && 'border-border hover:border-muted-foreground bg-background',
+              isDisabled && !isSelected && 'opacity-30 cursor-not-allowed border-border',
+              disabled && isSelected && 'cursor-not-allowed opacity-70',
             )}
           >
             {c.name}
@@ -73,6 +80,8 @@ export function SpecialPicksForm({
   championCandidates,
   scorerCandidates,
   locked,
+  championLocked = false,
+  topScorerLocked = false,
 }: Props) {
   const [champions, setChampions] = useState<string[]>(initialChampions.slice(0, 3))
   const [scorers, setScorers] = useState<string[]>(initialScorers.slice(0, 3))
@@ -139,7 +148,9 @@ export function SpecialPicksForm({
       <div className="space-y-4">
         <h3 className="font-heading font-bold text-lg">🏆 Campeón</h3>
         <p className="text-xs text-muted-foreground">
-          Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.
+          {championLocked
+            ? 'El admin ya bloqueó este pick. No se puede cambiar.'
+            : 'Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.'}
         </p>
         <CandidateGrid
           candidates={championCandidates}
@@ -147,6 +158,7 @@ export function SpecialPicksForm({
           max={1}
           onChange={setChampions}
           variant="amber"
+          disabled={championLocked}
         />
       </div>
 
@@ -154,7 +166,9 @@ export function SpecialPicksForm({
       <div className="space-y-4">
         <h3 className="font-heading font-bold text-lg">⚽ Goleador</h3>
         <p className="text-xs text-muted-foreground">
-          Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.
+          {topScorerLocked
+            ? 'El admin ya bloqueó este pick. No se puede cambiar.'
+            : 'Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.'}
         </p>
         <CandidateGrid
           candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
@@ -162,6 +176,7 @@ export function SpecialPicksForm({
           max={1}
           onChange={setScorers}
           variant="primary"
+          disabled={topScorerLocked}
         />
       </div>
 

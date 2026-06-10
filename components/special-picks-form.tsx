@@ -1,8 +1,17 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { saveSpecialPicks } from '@/actions/specialPicks'
 import { cn } from '@/lib/utils'
 
@@ -85,39 +94,57 @@ export function SpecialPicksForm({
 }: Props) {
   const [champions, setChampions] = useState<string[]>(initialChampions.slice(0, 3))
   const [scorers, setScorers] = useState<string[]>(initialScorers.slice(0, 3))
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [savedAndLocked, setSavedAndLocked] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  function handleSubmit(e: React.FormEvent) {
+  const hasUserLockedPicks = savedAndLocked || (
+    initialChampions.filter(Boolean).length === 1 && initialScorers.filter(Boolean).length === 1
+  )
+
+  function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (champions.length !== 1 || scorers.length !== 1) {
       toast.error('Seleccioná un campeón y un goleador')
       return
     }
+    setConfirmOpen(true)
+  }
+
+  function confirmSubmit() {
     startTransition(async () => {
       const result = await saveSpecialPicks(champions, scorers)
       if (result?.error) {
         toast.error(result.error)
       } else {
+        setConfirmOpen(false)
+        setSavedAndLocked(true)
         toast.success('¡Picks especiales guardados!')
       }
     })
   }
 
-  if (locked) {
+  if (locked || hasUserLockedPicks) {
     return (
       <div className="text-center py-8 space-y-3">
         <div className="text-4xl">🔒</div>
-        <p className="font-heading font-bold text-lg">El torneo ya comenzó</p>
-        <p className="text-sm text-muted-foreground">No podés modificar tus picks especiales.</p>
+        <p className="font-heading font-bold text-lg">
+          {locked ? 'El torneo ya comenzó' : 'Tus picks especiales ya quedaron bloqueados'}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {locked
+            ? 'No podés modificar tus picks especiales.'
+            : 'Esta selección es definitiva para mantener el juego justo para todos.'}
+        </p>
 
-        {(initialChampions.some(Boolean) || initialScorers.some(Boolean)) && (
+        {(champions.some(Boolean) || scorers.some(Boolean)) && (
           <div className="mt-6 space-y-5 text-left max-w-xs mx-auto">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
                 Tus campeones
               </p>
               <div className="flex flex-wrap gap-2">
-                {initialChampions.filter(Boolean).map((c, i) => (
+                {champions.filter(Boolean).map((c, i) => (
                   <span key={i} className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-semibold">
                     {c}
                   </span>
@@ -129,7 +156,7 @@ export function SpecialPicksForm({
                 Tus goleadores
               </p>
               <div className="flex flex-wrap gap-2">
-                {initialScorers.filter(Boolean).map((s, i) => (
+                {scorers.filter(Boolean).map((s, i) => (
                   <span key={i} className="bg-primary/10 border border-primary/20 text-primary text-sm px-3 py-1 rounded-full font-semibold">
                     {s}
                   </span>
@@ -143,50 +170,82 @@ export function SpecialPicksForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Champions */}
-      <div className="space-y-4">
-        <h3 className="font-heading font-bold text-lg">🏆 Campeón</h3>
-        <p className="text-xs text-muted-foreground">
-          {championLocked
-            ? 'El admin ya bloqueó este pick. No se puede cambiar.'
-            : 'Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.'}
-        </p>
-        <CandidateGrid
-          candidates={championCandidates}
-          selected={champions}
-          max={1}
-          onChange={setChampions}
-          variant="amber"
-          disabled={championLocked}
-        />
-      </div>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Champions */}
+        <div className="space-y-4">
+          <h3 className="font-heading font-bold text-lg">🏆 Campeón</h3>
+          <p className="text-xs text-muted-foreground">
+            {championLocked
+              ? 'El admin ya bloqueó este pick. No se puede cambiar.'
+              : 'Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.'}
+          </p>
+          <CandidateGrid
+            candidates={championCandidates}
+            selected={champions}
+            max={1}
+            onChange={setChampions}
+            variant="amber"
+            disabled={championLocked}
+          />
+        </div>
 
-      {/* Scorers */}
-      <div className="space-y-4">
-        <h3 className="font-heading font-bold text-lg">⚽ Goleador</h3>
-        <p className="text-xs text-muted-foreground">
-          {topScorerLocked
-            ? 'El admin ya bloqueó este pick. No se puede cambiar.'
-            : 'Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.'}
-        </p>
-        <CandidateGrid
-          candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
-          selected={scorers}
-          max={1}
-          onChange={setScorers}
-          variant="primary"
-          disabled={topScorerLocked}
-        />
-      </div>
+        {/* Scorers */}
+        <div className="space-y-4">
+          <h3 className="font-heading font-bold text-lg">⚽ Goleador</h3>
+          <p className="text-xs text-muted-foreground">
+            {topScorerLocked
+              ? 'El admin ya bloqueó este pick. No se puede cambiar.'
+              : 'Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.'}
+          </p>
+          <CandidateGrid
+            candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
+            selected={scorers}
+            max={1}
+            onChange={setScorers}
+            variant="primary"
+            disabled={topScorerLocked}
+          />
+        </div>
 
-      <Button
-        type="submit"
-        className="w-full h-12 text-base font-bold"
-        disabled={isPending || champions.length !== 1 || scorers.length !== 1}
-      >
-        {isPending ? 'Guardando...' : 'Guardar picks especiales'}
-      </Button>
-    </form>
+        <Button
+          type="submit"
+          className="w-full h-12 text-base font-bold"
+          disabled={isPending || champions.length !== 1 || scorers.length !== 1}
+        >
+          {isPending ? 'Guardando...' : 'Guardar picks especiales'}
+        </Button>
+      </form>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmá tus picks especiales</DialogTitle>
+            <DialogDescription>
+              Cuando confirmes, tu campeón y goleador quedan bloqueados. No vas a poder cambiarlos después.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-bold">Selección definitiva</p>
+            <p className="mt-1">
+              Campeón: <span className="font-semibold">{champions[0]}</span>
+            </p>
+            <p>
+              Goleador: <span className="font-semibold">{scorers[0]}</span>
+            </p>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isPending}>
+                Revisar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={confirmSubmit} disabled={isPending}>
+              {isPending ? 'Guardando...' : 'Confirmar y bloquear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

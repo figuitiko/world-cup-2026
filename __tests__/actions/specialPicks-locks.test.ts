@@ -26,7 +26,7 @@ describe('saveSpecialPicks locks', () => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({ user: { id: 'u1' } })
     mockedFindFirstMatch.mockResolvedValue({ kickoff: futureKickoff })
-    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: ['Mbappé'] })
+    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: [] })
     mockedFindLock.mockResolvedValue(null)
   })
 
@@ -42,6 +42,7 @@ describe('saveSpecialPicks locks', () => {
 
   it('rejects changing top scorer after admin top scorer lock', async () => {
     mockedFindLock.mockResolvedValue({ championLockedAt: null, topScorerLockedAt: new Date() })
+    mockedFindSpecialPick.mockResolvedValue({ champions: [], topScorers: ['Mbappé'] })
     const { saveSpecialPicks } = await import('@/actions/specialPicks')
 
     const result = await saveSpecialPicks(['Argentina'], ['Haaland'])

@@ -34,8 +34,18 @@ export async function saveSpecialPicks(champions: string[], topScorers: string[]
 
   const existingChampions = existingPick?.champions.filter(Boolean) ?? []
   const existingScorers = existingPick?.topScorers.filter(Boolean) ?? []
+  const userAlreadyLockedSpecialPicks = existingChampions.length === 1 && existingScorers.length === 1
   const championLocked = Boolean(lock?.championLockedAt)
   const topScorerLocked = Boolean(lock?.topScorerLockedAt)
+
+  if (userAlreadyLockedSpecialPicks) {
+    const sameChampion = existingChampions[0] === parsed.data.champions[0]
+    const sameTopScorer = existingScorers[0] === parsed.data.topScorers[0]
+
+    if (!sameChampion || !sameTopScorer) {
+      return { error: 'Tus picks especiales ya quedaron bloqueados' }
+    }
+  }
 
   if (championLocked) {
     if (existingChampions.length === 0 || existingChampions[0] !== parsed.data.champions[0]) {

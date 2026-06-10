@@ -296,6 +296,84 @@ export async function autoAssignMissingPicks() {
   return { count }
 }
 
+export async function autoAssignMissingTopScorers() {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const [candidates, users] = await Promise.all([
+    prisma.topScorerCandidate.findMany({ orderBy: { name: 'asc' } }),
+    prisma.user.findMany({
+      include: { specialPick: true },
+    }),
+  ])
+
+  if (candidates.length === 0) {
+    return { error: 'No hay goleadores candidatos cargados' }
+  }
+
+  let count = 0
+
+  for (const user of users) {
+    const currentScorers = user.specialPick?.topScorers.filter(Boolean) ?? []
+    if (currentScorers.length > 0) continue
+
+    const randomIndex = Math.floor(Math.random() * candidates.length)
+    const scorer = candidates[randomIndex].name
+    const champions = user.specialPick?.champions.filter(Boolean) ?? []
+
+    await prisma.specialPick.upsert({
+      where: { userId: user.id },
+      update: { topScorers: [scorer] },
+      create: { userId: user.id, champions, topScorers: [scorer] },
+    })
+    count++
+  }
+
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/leaderboard')
+  revalidatePath('/picks')
+  return { count }
+}
+
+export async function autoAssignMissingChampions() {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const [candidates, users] = await Promise.all([
+    prisma.championCandidate.findMany({ orderBy: { name: 'asc' } }),
+    prisma.user.findMany({
+      include: { specialPick: true },
+    }),
+  ])
+
+  if (candidates.length === 0) {
+    return { error: 'No hay selecciones candidatas cargadas' }
+  }
+
+  let count = 0
+
+  for (const user of users) {
+    const currentChampions = user.specialPick?.champions.filter(Boolean) ?? []
+    if (currentChampions.length > 0) continue
+
+    const randomIndex = Math.floor(Math.random() * candidates.length)
+    const champion = candidates[randomIndex].name
+    const topScorers = user.specialPick?.topScorers.filter(Boolean) ?? []
+
+    await prisma.specialPick.upsert({
+      where: { userId: user.id },
+      update: { champions: [champion] },
+      create: { userId: user.id, champions: [champion], topScorers },
+    })
+    count++
+  }
+
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/leaderboard')
+  revalidatePath('/picks')
+  return { count }
+}
+
 export async function deleteMatch(id: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }

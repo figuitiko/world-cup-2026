@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Barlow, Barlow_Condensed, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from 'next-auth/react'
+import { TopScorerDeadlineBanner } from '@/components/top-scorer-deadline-banner'
 
 const barlow = Barlow({
   subsets: ['latin'],
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${barlow.variable} ${barlowCondensed.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <TopScorerDeadlineBanner />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   )

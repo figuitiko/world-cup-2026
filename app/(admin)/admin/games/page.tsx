@@ -3,6 +3,7 @@ import { deleteMatch } from "@/actions/admin";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { UserTimezoneDateTime } from "@/components/user-timezone-date-time";
 import type { Match } from "@/generated/prisma/client";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -70,13 +71,11 @@ export default async function AdminGamesPage({
                 <p className="text-xs text-muted-foreground mt-1">
                   {match.round}
                   {match.group ? ` — Grupo ${match.group}` : ""} ·{" "}
-                  {new Date(match.kickoff).toLocaleDateString("es-AR", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
+                  <UserTimezoneDateTime
+                    value={match.kickoff.toISOString()}
+                    dateStyle="medium"
+                    className="inline tabular-nums"
+                  />{" "}
                   · {match.venue}
                 </p>
               </div>

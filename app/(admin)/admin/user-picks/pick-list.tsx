@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { setPickForUser } from '@/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { UserTimezoneDateTime } from '@/components/user-timezone-date-time'
 
 type Pick = 'HOME' | 'DRAW' | 'AWAY'
 
@@ -48,14 +49,10 @@ export function MatchPickList({ matches, userId }: Props) {
             <p className="font-medium text-sm">
               {match.homeTeam} vs {match.awayTeam}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {new Date(match.kickoff).toLocaleDateString('es-AR', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
+            <UserTimezoneDateTime
+              value={new Date(match.kickoff).toISOString()}
+              className="text-xs text-muted-foreground"
+            />
             {match.currentPick && (
               <Badge variant="secondary" className="mt-1 text-xs">
                 {match.currentPick === 'HOME'

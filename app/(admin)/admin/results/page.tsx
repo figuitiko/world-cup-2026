@@ -3,6 +3,7 @@ import { enterMatchResult } from '@/actions/admin'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { UserTimezoneDateTime } from '@/components/user-timezone-date-time'
 import type { Match } from '@/generated/prisma/client'
 
 function ResultForm({
@@ -55,12 +56,11 @@ export default async function AdminResultsPage() {
                   <p className="font-medium">
                     {match.homeTeam} vs {match.awayTeam}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(match.kickoff).toLocaleDateString('es-AR', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </p>
+                  <UserTimezoneDateTime
+                    value={match.kickoff.toISOString()}
+                    showTime={false}
+                    className="text-xs text-muted-foreground"
+                  />
                   {match.result && (
                     <Badge className="mt-1">
                       {match.result === 'HOME'

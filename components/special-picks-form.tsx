@@ -17,25 +17,6 @@ interface Props {
   locked: boolean
 }
 
-function ProgressDots({ filled, max = 3 }: { filled: number; max?: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex gap-1">
-        {Array.from({ length: max }).map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'w-2 h-2 rounded-full transition-all duration-200',
-              i < filled ? 'bg-primary scale-110' : 'bg-border'
-            )}
-          />
-        ))}
-      </div>
-      <span className="text-xs text-muted-foreground tabular-nums">{filled}/{max}</span>
-    </div>
-  )
-}
-
 function CandidateGrid({
   candidates,
   selected,
@@ -68,6 +49,7 @@ function CandidateGrid({
             type="button"
             disabled={isFull}
             onClick={() => toggle(c.name)}
+            aria-pressed={isSelected}
             className={cn(
               'px-3 py-2 rounded-xl border text-sm font-semibold transition-all duration-150',
               variant === 'amber' && isSelected && 'bg-amber-100 border-amber-400 text-amber-800 shadow-sm',

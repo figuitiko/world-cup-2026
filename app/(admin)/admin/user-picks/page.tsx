@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/db'
-import { autoAssignMissingPicks } from '@/actions/admin'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { MatchPickList } from './pick-list'
+import { AdminBulkActions } from './admin-bulk-actions'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
 const ROUNDS = [
@@ -59,16 +58,7 @@ export default async function AdminUserPicksPage({
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Picks de usuarios</h1>
-        <form
-          action={async () => {
-            'use server'
-            await autoAssignMissingPicks()
-          }}
-        >
-          <Button type="submit" variant="outline" size="sm">
-            Asignar picks faltantes (−5 min)
-          </Button>
-        </form>
+        <AdminBulkActions />
       </div>
 
       {/* User selector */}

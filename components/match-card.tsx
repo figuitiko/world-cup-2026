@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { PredictionForm } from '@/components/prediction-form'
+import { UserTimezoneDateTime } from '@/components/user-timezone-date-time'
 import { cn } from '@/lib/utils'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
@@ -25,10 +26,6 @@ export function MatchCard({ match, prediction }: Props) {
   const isCorrect = prediction && match.result ? prediction.pick === match.result : null
   const isTBD = match.homeTeam === 'POR DEFINIR'
 
-  const kickoff = new Date(match.kickoff)
-  const dateStr = kickoff.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
-  const timeStr = kickoff.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-
   return (
     <div
       className={cn(
@@ -50,9 +47,10 @@ export function MatchCard({ match, prediction }: Props) {
             </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {dateStr} · {timeStr}
-        </span>
+        <UserTimezoneDateTime
+          value={match.kickoff.toISOString()}
+          className="text-xs text-muted-foreground tabular-nums"
+        />
       </div>
 
       {/* Teams */}

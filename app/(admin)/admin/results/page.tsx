@@ -13,13 +13,11 @@ function ResultForm({
   result,
   currentResult,
   label,
-  disabled,
 }: {
   matchId: string
   result: string
   currentResult: string | null
   label: string
-  disabled: boolean
 }) {
   async function submit() {
     'use server'
@@ -32,7 +30,6 @@ function ResultForm({
         type="submit"
         variant={currentResult === result ? 'default' : 'outline'}
         size="sm"
-        disabled={disabled}
       >
         {label}
       </Button>
@@ -85,27 +82,9 @@ export default async function AdminResultsPage() {
                   )}
                 </div>
                 <div className="flex gap-2 flex-wrap items-start">
-                  <ResultForm
-                    matchId={match.id}
-                    result="HOME"
-                    currentResult={match.result}
-                    label={match.homeTeam}
-                    disabled={match.locked}
-                  />
-                  <ResultForm
-                    matchId={match.id}
-                    result="DRAW"
-                    currentResult={match.result}
-                    label="Empate"
-                    disabled={match.locked}
-                  />
-                  <ResultForm
-                    matchId={match.id}
-                    result="AWAY"
-                    currentResult={match.result}
-                    label={match.awayTeam}
-                    disabled={match.locked}
-                  />
+                  <ResultForm matchId={match.id} result="HOME" currentResult={match.result} label={match.homeTeam} />
+                  <ResultForm matchId={match.id} result="DRAW" currentResult={match.result} label="Empate" />
+                  <ResultForm matchId={match.id} result="AWAY" currentResult={match.result} label={match.awayTeam} />
                   {!match.locked && (
                     <LockMatchButton
                       matchId={match.id}

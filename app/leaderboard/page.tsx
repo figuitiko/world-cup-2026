@@ -31,7 +31,6 @@ export default async function LeaderboardPage() {
 
   const [users, tournamentResult] = await Promise.all([
     prisma.user.findMany({
-      where: { isAdmin: false },
       include: {
         predictions: { include: { match: true } },
         specialPick: true,

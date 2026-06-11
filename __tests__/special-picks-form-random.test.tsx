@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { SpecialPicksForm } from '@/components/special-picks-form'
 
 vi.mock('@/actions/specialPicks', () => ({
-  saveSpecialPicks: vi.fn(),
+  saveChampionPick: vi.fn(),
+  saveScorerPick: vi.fn(),
 }))
 
 vi.mock('sonner', () => ({

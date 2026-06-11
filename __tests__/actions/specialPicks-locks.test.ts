@@ -21,48 +21,62 @@ const mockedUpsertSpecialPick = prisma.specialPick.upsert as Mock
 
 const futureKickoff = new Date(Date.now() + 1000 * 60 * 60 * 24)
 
-describe('saveSpecialPicks locks', () => {
+describe('admin locks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({ user: { id: 'u1' } })
     mockedFindFirstMatch.mockResolvedValue({ kickoff: futureKickoff })
-    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: [] })
+    mockedFindSpecialPick.mockResolvedValue({ champions: [], topScorers: [] })
     mockedFindLock.mockResolvedValue(null)
   })
 
-  it('rejects changing champion after admin champion lock', async () => {
+  it('rejects champion pick after admin champion lock', async () => {
     mockedFindLock.mockResolvedValue({ championLockedAt: new Date(), topScorerLockedAt: null })
-    const { saveSpecialPicks } = await import('@/actions/specialPicks')
+    const { saveChampionPick } = await import('@/actions/specialPicks')
 
-    const result = await saveSpecialPicks(['Brasil'], ['Mbappé'])
+    const result = await saveChampionPick('Brasil')
 
     expect(result).toEqual({ error: 'El campeón fue bloqueado por el admin' })
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
   })
 
-  it('rejects changing top scorer after admin top scorer lock', async () => {
+  it('rejects scorer pick after admin scorer lock', async () => {
     mockedFindLock.mockResolvedValue({ championLockedAt: null, topScorerLockedAt: new Date() })
-    mockedFindSpecialPick.mockResolvedValue({ champions: [], topScorers: ['Mbappé'] })
-    const { saveSpecialPicks } = await import('@/actions/specialPicks')
+    const { saveScorerPick } = await import('@/actions/specialPicks')
 
-    const result = await saveSpecialPicks(['Argentina'], ['Haaland'])
+    const result = await saveScorerPick('Haaland')
 
     expect(result).toEqual({ error: 'El goleador fue bloqueado por el admin' })
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
   })
 
-  it('allows changing unlocked scorer while preserving locked champion', async () => {
+  it('allows saving scorer while champion is admin-locked', async () => {
     mockedFindLock.mockResolvedValue({ championLockedAt: new Date(), topScorerLockedAt: null })
     mockedUpsertSpecialPick.mockResolvedValue({})
-    const { saveSpecialPicks } = await import('@/actions/specialPicks')
+    const { saveScorerPick } = await import('@/actions/specialPicks')
 
-    const result = await saveSpecialPicks(['Argentina'], ['Haaland'])
+    const result = await saveScorerPick('Haaland')
 
     expect(result).toBeUndefined()
     expect(mockedUpsertSpecialPick).toHaveBeenCalledWith({
       where: { userId: 'u1' },
-      update: { champions: ['Argentina'], topScorers: ['Haaland'] },
-      create: { userId: 'u1', champions: ['Argentina'], topScorers: ['Haaland'] },
+      update: { topScorers: ['Haaland'] },
+      create: { userId: 'u1', champions: [], topScorers: ['Haaland'] },
+    })
+  })
+
+  it('allows saving champion while scorer is admin-locked', async () => {
+    mockedFindLock.mockResolvedValue({ championLockedAt: null, topScorerLockedAt: new Date() })
+    mockedUpsertSpecialPick.mockResolvedValue({})
+    const { saveChampionPick } = await import('@/actions/specialPicks')
+
+    const result = await saveChampionPick('Argentina')
+
+    expect(result).toBeUndefined()
+    expect(mockedUpsertSpecialPick).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      update: { champions: ['Argentina'] },
+      create: { userId: 'u1', champions: ['Argentina'], topScorers: [] },
     })
   })
 })

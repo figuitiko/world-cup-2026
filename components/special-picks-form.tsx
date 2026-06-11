@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, type FormEvent } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { saveSpecialPicks } from '@/actions/specialPicks'
+import { saveChampionPick, saveScorerPick } from '@/actions/specialPicks'
 import { cn } from '@/lib/utils'
 
 interface ChampionCandidate { id: string; name: string }
@@ -83,6 +83,18 @@ function CandidateGrid({
   )
 }
 
+function LockedPickBadge({ value, variant }: { value: string; variant: 'amber' | 'primary' }) {
+  return (
+    <span className={cn(
+      'text-sm px-3 py-1 rounded-full font-semibold inline-block',
+      variant === 'amber' && 'bg-amber-50 border border-amber-200 text-amber-800',
+      variant === 'primary' && 'bg-primary/10 border border-primary/20 text-primary',
+    )}>
+      {value}
+    </span>
+  )
+}
+
 export function SpecialPicksForm({
   initialChampions,
   initialScorers,
@@ -92,147 +104,135 @@ export function SpecialPicksForm({
   championLocked = false,
   topScorerLocked = false,
 }: Props) {
-  const [champions, setChampions] = useState<string[]>(initialChampions.slice(0, 3))
-  const [scorers, setScorers] = useState<string[]>(initialScorers.slice(0, 3))
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [savedAndLocked, setSavedAndLocked] = useState(false)
+  const [champion, setChampion] = useState<string>(initialChampions.filter(Boolean)[0] ?? '')
+  const [scorer, setScorer] = useState<string>(initialScorers.filter(Boolean)[0] ?? '')
+  const [savedChampion, setSavedChampion] = useState(false)
+  const [savedScorer, setSavedScorer] = useState(false)
+  const [confirmType, setConfirmType] = useState<'champion' | 'scorer' | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const hasUserLockedPicks = savedAndLocked || (
-    initialChampions.filter(Boolean).length === 1 && initialScorers.filter(Boolean).length === 1
-  )
+  const championIsSaved = savedChampion || initialChampions.filter(Boolean).length === 1
+  const scorerIsSaved = savedScorer || initialScorers.filter(Boolean).length === 1
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (champions.length !== 1 || scorers.length !== 1) {
-      toast.error('Seleccioná un campeón y un goleador')
-      return
-    }
-    setConfirmOpen(true)
+  const championReadOnly = locked || championIsSaved || championLocked
+  const scorerReadOnly = locked || scorerIsSaved || topScorerLocked
+
+  function getLockedReason(adminLocked: boolean, userSaved: boolean) {
+    if (locked) return 'El torneo ya comenzó. No podés modificar tus picks.'
+    if (adminLocked) return 'El admin bloqueó este pick.'
+    if (userSaved) return 'Este pick quedó bloqueado.'
+    return ''
   }
 
-  function confirmSubmit() {
+  function confirmSave() {
     startTransition(async () => {
-      const result = await saveSpecialPicks(champions, scorers)
+      let result: { error: string } | undefined
+
+      if (confirmType === 'champion') {
+        result = await saveChampionPick(champion)
+        if (!result?.error) setSavedChampion(true)
+      } else if (confirmType === 'scorer') {
+        result = await saveScorerPick(scorer)
+        if (!result?.error) setSavedScorer(true)
+      }
+
       if (result?.error) {
         toast.error(result.error)
       } else {
-        setConfirmOpen(false)
-        setSavedAndLocked(true)
-        toast.success('¡Picks especiales guardados!')
+        setConfirmType(null)
+        toast.success('¡Pick guardado!')
       }
     })
   }
 
-  if (locked || hasUserLockedPicks) {
-    return (
-      <div className="text-center py-8 space-y-3">
-        <div className="text-4xl">🔒</div>
-        <p className="font-heading font-bold text-lg">
-          {locked ? 'El torneo ya comenzó' : 'Tus picks especiales ya quedaron bloqueados'}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {locked
-            ? 'No podés modificar tus picks especiales.'
-            : 'Esta selección es definitiva para mantener el juego justo para todos.'}
-        </p>
-
-        {(champions.some(Boolean) || scorers.some(Boolean)) && (
-          <div className="mt-6 space-y-5 text-left max-w-xs mx-auto">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Tus campeones
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {champions.filter(Boolean).map((c, i) => (
-                  <span key={i} className="bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-1 rounded-full font-semibold">
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Tus goleadores
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {scorers.filter(Boolean).map((s, i) => (
-                  <span key={i} className="bg-primary/10 border border-primary/20 text-primary text-sm px-3 py-1 rounded-full font-semibold">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Champions */}
+      <div className="space-y-8">
+        {/* Champion section */}
         <div className="space-y-4">
           <h3 className="font-heading font-bold text-lg">🏆 Campeón</h3>
-          <p className="text-xs text-muted-foreground">
-            {championLocked
-              ? 'El admin ya bloqueó este pick. No se puede cambiar.'
-              : 'Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.'}
-          </p>
-          <CandidateGrid
-            candidates={championCandidates}
-            selected={champions}
-            max={1}
-            onChange={setChampions}
-            variant="amber"
-            disabled={championLocked}
-          />
+          {championReadOnly ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {getLockedReason(championLocked, championIsSaved)}
+              </p>
+              {champion && <LockedPickBadge value={champion} variant="amber" />}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Elegí la selección campeona. Tocá para seleccionar, volvé a tocar para quitar.
+              </p>
+              <CandidateGrid
+                candidates={championCandidates}
+                selected={champion ? [champion] : []}
+                max={1}
+                onChange={v => setChampion(v[0] ?? '')}
+                variant="amber"
+              />
+              <Button
+                type="button"
+                className="w-full h-11 font-bold"
+                disabled={!champion || isPending}
+                onClick={() => setConfirmType('champion')}
+              >
+                Guardar campeón
+              </Button>
+            </>
+          )}
         </div>
 
-        {/* Scorers */}
+        {/* Scorer section */}
         <div className="space-y-4">
           <h3 className="font-heading font-bold text-lg">⚽ Goleador</h3>
-          <p className="text-xs text-muted-foreground">
-            {topScorerLocked
-              ? 'El admin ya bloqueó este pick. No se puede cambiar.'
-              : 'Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.'}
-          </p>
-          <CandidateGrid
-            candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
-            selected={scorers}
-            max={1}
-            onChange={setScorers}
-            variant="primary"
-            disabled={topScorerLocked}
-          />
+          {scorerReadOnly ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {getLockedReason(topScorerLocked, scorerIsSaved)}
+              </p>
+              {scorer && <LockedPickBadge value={scorer} variant="primary" />}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Elegí el goleador del torneo. Tocá para seleccionar, volvé a tocar para quitar.
+              </p>
+              <CandidateGrid
+                candidates={scorerCandidates.map(s => ({ ...s, sub: s.country }))}
+                selected={scorer ? [scorer] : []}
+                max={1}
+                onChange={v => setScorer(v[0] ?? '')}
+                variant="primary"
+              />
+              <Button
+                type="button"
+                className="w-full h-11 font-bold"
+                disabled={!scorer || isPending}
+                onClick={() => setConfirmType('scorer')}
+              >
+                Guardar goleador
+              </Button>
+            </>
+          )}
         </div>
+      </div>
 
-        <Button
-          type="submit"
-          className="w-full h-12 text-base font-bold"
-          disabled={isPending || champions.length !== 1 || scorers.length !== 1}
-        >
-          {isPending ? 'Guardando...' : 'Guardar picks especiales'}
-        </Button>
-      </form>
-
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <Dialog open={confirmType !== null} onOpenChange={open => !open && setConfirmType(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmá tus picks especiales</DialogTitle>
+            <DialogTitle>Confirmá tu pick</DialogTitle>
             <DialogDescription>
-              Cuando confirmes, tu campeón y goleador quedan bloqueados. No vas a poder cambiarlos después.
+              Una vez que confirmes, este pick queda bloqueado. No vas a poder cambiarlo después.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p className="font-bold">Selección definitiva</p>
-            <p className="mt-1">
-              Campeón: <span className="font-semibold">{champions[0]}</span>
-            </p>
-            <p>
-              Goleador: <span className="font-semibold">{scorers[0]}</span>
-            </p>
+            {confirmType === 'champion' && (
+              <p className="mt-1">Campeón: <span className="font-semibold">{champion}</span></p>
+            )}
+            {confirmType === 'scorer' && (
+              <p className="mt-1">Goleador: <span className="font-semibold">{scorer}</span></p>
+            )}
           </div>
           <DialogFooter>
             <DialogClose asChild>
@@ -240,7 +240,7 @@ export function SpecialPicksForm({
                 Revisar
               </Button>
             </DialogClose>
-            <Button type="button" onClick={confirmSubmit} disabled={isPending}>
+            <Button type="button" onClick={confirmSave} disabled={isPending}>
               {isPending ? 'Guardando...' : 'Confirmar y bloquear'}
             </Button>
           </DialogFooter>

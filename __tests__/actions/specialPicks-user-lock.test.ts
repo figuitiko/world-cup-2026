@@ -21,7 +21,7 @@ const mockedUpsertSpecialPick = prisma.specialPick.upsert as Mock
 
 const futureKickoff = new Date(Date.now() + 1000 * 60 * 60 * 24)
 
-describe('saveSpecialPicks user lock', () => {
+describe('user pick locks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedAuth.mockResolvedValue({ user: { id: 'u1' } })
@@ -29,13 +29,53 @@ describe('saveSpecialPicks user lock', () => {
     mockedFindLock.mockResolvedValue(null)
   })
 
-  it('rejects changing special picks after the user already saved both picks', async () => {
-    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: ['Kylian Mbappé'] })
-    const { saveSpecialPicks } = await import('@/actions/specialPicks')
+  it('rejects changing champion after user already saved it', async () => {
+    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: [] })
+    const { saveChampionPick } = await import('@/actions/specialPicks')
 
-    const result = await saveSpecialPicks(['España'], ['Erling Haaland'])
+    const result = await saveChampionPick('España')
 
-    expect(result).toEqual({ error: 'Tus picks especiales ya quedaron bloqueados' })
+    expect(result).toEqual({ error: 'Tu pick de campeón ya quedó bloqueado' })
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
+  })
+
+  it('rejects changing scorer after user already saved it', async () => {
+    mockedFindSpecialPick.mockResolvedValue({ champions: [], topScorers: ['Kylian Mbappé'] })
+    const { saveScorerPick } = await import('@/actions/specialPicks')
+
+    const result = await saveScorerPick('Erling Haaland')
+
+    expect(result).toEqual({ error: 'Tu pick de goleador ya quedó bloqueado' })
+    expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
+  })
+
+  it('allows saving scorer when only champion is already saved', async () => {
+    mockedFindSpecialPick.mockResolvedValue({ champions: ['Argentina'], topScorers: [] })
+    mockedUpsertSpecialPick.mockResolvedValue({})
+    const { saveScorerPick } = await import('@/actions/specialPicks')
+
+    const result = await saveScorerPick('Kylian Mbappé')
+
+    expect(result).toBeUndefined()
+    expect(mockedUpsertSpecialPick).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      update: { topScorers: ['Kylian Mbappé'] },
+      create: { userId: 'u1', champions: [], topScorers: ['Kylian Mbappé'] },
+    })
+  })
+
+  it('allows saving champion when only scorer is already saved', async () => {
+    mockedFindSpecialPick.mockResolvedValue({ champions: [], topScorers: ['Kylian Mbappé'] })
+    mockedUpsertSpecialPick.mockResolvedValue({})
+    const { saveChampionPick } = await import('@/actions/specialPicks')
+
+    const result = await saveChampionPick('Argentina')
+
+    expect(result).toBeUndefined()
+    expect(mockedUpsertSpecialPick).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      update: { champions: ['Argentina'] },
+      create: { userId: 'u1', champions: ['Argentina'], topScorers: [] },
+    })
   })
 })

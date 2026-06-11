@@ -54,13 +54,13 @@ describe('saveChampionPick', () => {
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
   })
 
-  it('rejects when tournament already started', async () => {
+  it('rejects when group phase already ended', async () => {
     mockedFindFirstMatch.mockResolvedValue({ kickoff: pastKickoff })
     const { saveChampionPick } = await import('@/actions/specialPicks')
 
     const result = await saveChampionPick('Argentina')
 
-    expect(result).toEqual({ error: 'El torneo ya comenzó, no podés cambiar tus picks' })
+    expect(result).toEqual({ error: 'La fase de grupos ya terminó, no podés cambiar tu campeón' })
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
   })
 })
@@ -103,7 +103,7 @@ describe('saveScorerPick', () => {
 
     const result = await saveScorerPick('Kylian Mbappé')
 
-    expect(result).toEqual({ error: 'El torneo ya comenzó, no podés cambiar tus picks' })
+    expect(result).toEqual({ error: 'El torneo ya comenzó, no podés cambiar tu goleador' })
     expect(mockedUpsertSpecialPick).not.toHaveBeenCalled()
   })
 })

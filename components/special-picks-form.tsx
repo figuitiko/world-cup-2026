@@ -23,7 +23,9 @@ interface Props {
   initialScorers: string[]
   championCandidates: ChampionCandidate[]
   scorerCandidates: ScorerCandidate[]
-  locked: boolean
+  locked?: boolean
+  championDeadlineLocked?: boolean
+  topScorerDeadlineLocked?: boolean
   championLocked?: boolean
   topScorerLocked?: boolean
 }
@@ -100,7 +102,9 @@ export function SpecialPicksForm({
   initialScorers,
   championCandidates,
   scorerCandidates,
-  locked,
+  locked = false,
+  championDeadlineLocked,
+  topScorerDeadlineLocked,
   championLocked = false,
   topScorerLocked = false,
 }: Props) {
@@ -114,11 +118,24 @@ export function SpecialPicksForm({
   const championIsSaved = savedChampion || initialChampions.filter(Boolean).length === 1
   const scorerIsSaved = savedScorer || initialScorers.filter(Boolean).length === 1
 
-  const championReadOnly = locked || championIsSaved || championLocked
-  const scorerReadOnly = locked || scorerIsSaved || topScorerLocked
+  const championLockedByDeadline = championDeadlineLocked ?? locked
+  const scorerLockedByDeadline = topScorerDeadlineLocked ?? locked
 
-  function getLockedReason(adminLocked: boolean, userSaved: boolean) {
-    if (locked) return 'El torneo ya comenzó. No podés modificar tus picks.'
+  const championReadOnly = championLockedByDeadline || championIsSaved || championLocked
+  const scorerReadOnly = scorerLockedByDeadline || scorerIsSaved || topScorerLocked
+
+  function getLockedReason({
+    adminLocked,
+    userSaved,
+    deadlineLocked,
+    deadlineReason,
+  }: {
+    adminLocked: boolean
+    userSaved: boolean
+    deadlineLocked: boolean
+    deadlineReason: string
+  }) {
+    if (deadlineLocked) return deadlineReason
     if (adminLocked) return 'El admin bloqueó este pick.'
     if (userSaved) return 'Este pick quedó bloqueado.'
     return ''
@@ -154,7 +171,12 @@ export function SpecialPicksForm({
           {championReadOnly ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                {getLockedReason(championLocked, championIsSaved)}
+                {getLockedReason({
+                  adminLocked: championLocked,
+                  userSaved: championIsSaved,
+                  deadlineLocked: championLockedByDeadline,
+                  deadlineReason: 'La fase de grupos ya terminó. No podés modificar tu campeón.',
+                })}
               </p>
               {champion && <LockedPickBadge value={champion} variant="amber" />}
             </div>
@@ -188,7 +210,12 @@ export function SpecialPicksForm({
           {scorerReadOnly ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                {getLockedReason(topScorerLocked, scorerIsSaved)}
+                {getLockedReason({
+                  adminLocked: topScorerLocked,
+                  userSaved: scorerIsSaved,
+                  deadlineLocked: scorerLockedByDeadline,
+                  deadlineReason: 'El torneo ya comenzó. No podés modificar tu goleador.',
+                })}
               </p>
               {scorer && <LockedPickBadge value={scorer} variant="primary" />}
             </div>

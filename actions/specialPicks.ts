@@ -5,12 +5,20 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 
-async function isTournamentStarted() {
-  const firstMatch = await prisma.match.findFirst({
+async function isTopScorerDeadlineLocked() {
+  const firstGroupMatch = await prisma.match.findFirst({
     where: { round: 'GROUP' },
     orderBy: { kickoff: 'asc' },
   })
-  return Boolean(firstMatch && firstMatch.kickoff <= new Date())
+  return Boolean(firstGroupMatch && firstGroupMatch.kickoff <= new Date())
+}
+
+async function isChampionDeadlineLocked() {
+  const lastGroupMatch = await prisma.match.findFirst({
+    where: { round: 'GROUP' },
+    orderBy: { kickoff: 'desc' },
+  })
+  return Boolean(lastGroupMatch && lastGroupMatch.kickoff <= new Date())
 }
 
 export async function saveChampionPick(champion: string) {
@@ -20,8 +28,8 @@ export async function saveChampionPick(champion: string) {
   const parsed = z.string().min(1).safeParse(champion)
   if (!parsed.success) return { error: 'Seleccioná un campeón' }
 
-  if (await isTournamentStarted()) {
-    return { error: 'El torneo ya comenzó, no podés cambiar tus picks' }
+  if (await isChampionDeadlineLocked()) {
+    return { error: 'La fase de grupos ya terminó, no podés cambiar tu campeón' }
   }
 
   const [existingPick, lock] = await Promise.all([
@@ -53,8 +61,8 @@ export async function saveScorerPick(scorer: string) {
   const parsed = z.string().min(1).safeParse(scorer)
   if (!parsed.success) return { error: 'Seleccioná un goleador' }
 
-  if (await isTournamentStarted()) {
-    return { error: 'El torneo ya comenzó, no podés cambiar tus picks' }
+  if (await isTopScorerDeadlineLocked()) {
+    return { error: 'El torneo ya comenzó, no podés cambiar tu goleador' }
   }
 
   const [existingPick, lock] = await Promise.all([

@@ -12,8 +12,7 @@ export function TopScorerDeadlineBanner() {
       <span className="font-heading uppercase tracking-wide">Alerta:</span>{" "}
       <span>Goleador se bloquea antes del primer partido.</span>{" "}
       <span className="font-normal">
-        Elegí tu pick de goleador ahora; si no, no vas a poder cambiarlo
-        después.
+        Elegí tu pick de goleador ahora. Campeón se bloquea después del último partido de la fase de grupos.
       </span>
     </div>
   );

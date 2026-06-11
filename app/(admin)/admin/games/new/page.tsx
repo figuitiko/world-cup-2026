@@ -23,7 +23,10 @@ export default function NewGamePage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const result = await createMatch(form)
+      const result = await createMatch({
+        ...form,
+        kickoff: new Date(form.kickoff).toISOString(),
+      })
       if (result?.error) {
         toast.error(result.error)
       } else {
@@ -67,7 +70,12 @@ export default function NewGamePage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kickoff">Fecha y hora</Label>
+              <Label htmlFor="kickoff">
+                Fecha y hora{' '}
+                <span className="text-xs text-muted-foreground font-normal" suppressHydrationWarning>
+                  (tu zona horaria: {Intl.DateTimeFormat().resolvedOptions().timeZone})
+                </span>
+              </Label>
               <Input id="kickoff" name="kickoff" type="datetime-local" value={form.kickoff} onChange={onChange} required />
             </div>
             <div className="space-y-2">

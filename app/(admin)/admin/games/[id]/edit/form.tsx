@@ -11,21 +11,24 @@ import { updateMatch } from '@/actions/admin'
 import type { Match } from '@/generated/prisma/client'
 
 function toDatetimeLocal(date: Date): string {
-  return new Date(date).toISOString().slice(0, 16)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 export default function EditGameForm({ match }: { match: Match }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     matchNumber: String(match.matchNumber),
     group: match.group ?? '',
     round: match.round,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
-    kickoff: toDatetimeLocal(match.kickoff),
+    kickoff: typeof window !== 'undefined'
+      ? toDatetimeLocal(match.kickoff)
+      : match.kickoff.toISOString().slice(0, 16),
     venue: match.venue,
-  })
+  }))
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -34,7 +37,10 @@ export default function EditGameForm({ match }: { match: Match }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const result = await updateMatch(match.id, form)
+      const result = await updateMatch(match.id, {
+        ...form,
+        kickoff: new Date(form.kickoff).toISOString(),
+      })
       if (result?.error) {
         toast.error(result.error)
       } else {
@@ -76,8 +82,13 @@ export default function EditGameForm({ match }: { match: Match }) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="kickoff">Fecha y hora</Label>
-            <Input id="kickoff" name="kickoff" type="datetime-local" value={form.kickoff} onChange={onChange} required />
+            <Label htmlFor="kickoff">
+              Fecha y hora{' '}
+              <span className="text-xs text-muted-foreground font-normal" suppressHydrationWarning>
+                (tu zona horaria: {Intl.DateTimeFormat().resolvedOptions().timeZone})
+              </span>
+            </Label>
+            <Input id="kickoff" name="kickoff" type="datetime-local" value={form.kickoff} onChange={onChange} required suppressHydrationWarning />
           </div>
           <div className="space-y-2">
             <Label htmlFor="venue">Estadio</Label>

@@ -23,6 +23,7 @@ const futureMatch: Match = {
   kickoff: new Date(Date.now() + 1000 * 60 * 60),
   venue: 'Estadio Azteca',
   result: null,
+  locked: false,
 }
 
 const prediction: Prediction = {

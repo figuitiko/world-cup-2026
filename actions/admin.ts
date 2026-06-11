@@ -244,12 +244,26 @@ export async function deleteTopScorerCandidate(id: string) {
   revalidatePath('/picks')
 }
 
+export async function lockMatch(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  await prisma.match.update({ where: { id }, data: { locked: true } })
+
+  revalidatePath('/admin/results')
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/matches')
+}
+
 export async function setPickForUser(userId: string, matchId: string, pick: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }
 
   const parsed = resultSchema.safeParse(pick)
   if (!parsed.success) return { error: 'Pick inválido' }
+
+  const match = await prisma.match.findUnique({ where: { id: matchId } })
+  if (match?.locked) return { error: 'Este partido está bloqueado' }
 
   await prisma.prediction.upsert({
     where: { userId_matchId: { userId, matchId } },
@@ -291,7 +305,16 @@ export async function autoAssignMissingPicks() {
     }
   }
 
+  if (matches.length > 0) {
+    await prisma.match.updateMany({
+      where: { id: { in: matches.map(m => m.id) } },
+      data: { locked: true },
+    })
+  }
+
   revalidatePath('/matches')
+  revalidatePath('/admin/results')
+  revalidatePath('/admin/user-picks')
   revalidatePath('/leaderboard')
   return { count }
 }

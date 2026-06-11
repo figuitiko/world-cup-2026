@@ -38,6 +38,7 @@ model Match {
   kickoff     DateTime
   venue       String
   result      Result?
+  locked      Boolean      @default(false)
   predictions Prediction[]
 
   @@index([round])

@@ -16,6 +16,7 @@ export async function createOrUpdatePrediction(matchId: string, pick: string) {
 
   const match = await prisma.match.findUnique({ where: { id: matchId } })
   if (!match) return { error: 'Partido no encontrado' }
+  if (match.locked) return { error: 'Este partido está bloqueado' }
   if (match.kickoff <= new Date()) return { error: 'Este partido ya comenzó' }
 
   await prisma.prediction.upsert({

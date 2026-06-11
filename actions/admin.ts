@@ -388,6 +388,57 @@ export async function autoAssignMissingChampions() {
   return { count }
 }
 
+export async function setSpecialPickForUser(
+  userId: string,
+  type: 'champion' | 'scorer',
+  value: string,
+) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  if (!value.trim()) return { error: 'Valor requerido' }
+
+  if (type === 'champion') {
+    await prisma.specialPick.upsert({
+      where: { userId },
+      update: { champions: [value.trim()] },
+      create: { userId, champions: [value.trim()], topScorers: [] },
+    })
+  } else {
+    await prisma.specialPick.upsert({
+      where: { userId },
+      update: { topScorers: [value.trim()] },
+      create: { userId, champions: [], topScorers: [value.trim()] },
+    })
+  }
+
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/leaderboard')
+  revalidatePath('/picks')
+}
+
+export async function clearSpecialPickForUser(userId: string, type: 'champion' | 'scorer') {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  if (type === 'champion') {
+    await prisma.specialPick.upsert({
+      where: { userId },
+      update: { champions: [] },
+      create: { userId, champions: [], topScorers: [] },
+    })
+  } else {
+    await prisma.specialPick.upsert({
+      where: { userId },
+      update: { topScorers: [] },
+      create: { userId, champions: [], topScorers: [] },
+    })
+  }
+
+  revalidatePath('/admin/user-picks')
+  revalidatePath('/leaderboard')
+  revalidatePath('/picks')
+}
+
 export async function deleteMatch(id: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }

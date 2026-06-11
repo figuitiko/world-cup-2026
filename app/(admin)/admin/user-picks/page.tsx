@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { MatchPickList } from './pick-list'
 import { AdminBulkActions } from './admin-bulk-actions'
+import { SpecialPickEditor } from './special-pick-editor'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
 const ROUNDS = [
@@ -41,17 +42,22 @@ export default async function AdminUserPicksPage({
   const shouldFetchMatches =
     userId && (activeRound !== 'GROUP' || activeGroup !== null)
 
-  const matches: (Match & { predictions: Prediction[] })[] = shouldFetchMatches
-    ? await prisma.match.findMany({
-        where: {
-          homeTeam: { not: 'POR DEFINIR' },
-          round: activeRound,
-          ...(activeRound === 'GROUP' && activeGroup ? { group: activeGroup } : {}),
-        },
-        orderBy: { kickoff: 'asc' },
-        include: { predictions: { where: { userId } } },
-      })
-    : []
+  const [matches, championCandidates, scorerCandidates, specialPick] = await Promise.all([
+    shouldFetchMatches
+      ? prisma.match.findMany({
+          where: {
+            homeTeam: { not: 'POR DEFINIR' },
+            round: activeRound,
+            ...(activeRound === 'GROUP' && activeGroup ? { group: activeGroup } : {}),
+          },
+          orderBy: { kickoff: 'asc' },
+          include: { predictions: { where: { userId } } },
+        })
+      : Promise.resolve([] as (Match & { predictions: Prediction[] })[]),
+    userId ? prisma.championCandidate.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+    userId ? prisma.topScorerCandidate.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+    userId ? prisma.specialPick.findUnique({ where: { userId } }) : Promise.resolve(null),
+  ])
 
   return (
     <div className="space-y-6">
@@ -94,6 +100,14 @@ export default async function AdminUserPicksPage({
           <p className="text-sm font-medium text-muted-foreground">
             Picks de <span className="text-foreground">{selectedUser.name}</span>
           </p>
+
+          <SpecialPickEditor
+            userId={selectedUser.id}
+            currentChampion={specialPick?.champions.filter(Boolean)[0] ?? null}
+            currentScorer={specialPick?.topScorers.filter(Boolean)[0] ?? null}
+            championCandidates={championCandidates}
+            scorerCandidates={scorerCandidates}
+          />
 
           {/* Round tabs */}
           <div className="flex flex-wrap gap-1.5">

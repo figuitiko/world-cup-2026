@@ -53,14 +53,14 @@ export default async function AdminResultsPage() {
         {matches.map((match: Match) => (
           <Card key={match.id} className={match.locked ? 'opacity-70' : ''}>
             <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium">
                       {match.homeTeam} vs {match.awayTeam}
                     </p>
                     {match.locked && (
-                      <span className="inline-flex items-center gap-1 text-xs text-destructive font-semibold">
+                      <span className="inline-flex items-center gap-1 text-xs text-destructive font-semibold shrink-0">
                         <Lock size={12} />
                         Bloqueado
                       </span>
@@ -72,16 +72,18 @@ export default async function AdminResultsPage() {
                     className="text-xs text-muted-foreground"
                   />
                   {match.result && (
-                    <Badge className="mt-1">
-                      {match.result === 'HOME'
-                        ? `Ganó ${match.homeTeam}`
-                        : match.result === 'AWAY'
-                          ? `Ganó ${match.awayTeam}`
-                          : 'Empate'}
-                    </Badge>
+                    <div className="mt-1">
+                      <Badge>
+                        {match.result === 'HOME'
+                          ? `Ganó ${match.homeTeam}`
+                          : match.result === 'AWAY'
+                            ? `Ganó ${match.awayTeam}`
+                            : 'Empate'}
+                      </Badge>
+                    </div>
                   )}
                 </div>
-                <div className="flex gap-2 flex-wrap items-start">
+                <div className="flex gap-2 flex-wrap items-center">
                   <ResultForm matchId={match.id} result="HOME" currentResult={match.result} label={match.homeTeam} />
                   <ResultForm matchId={match.id} result="DRAW" currentResult={match.result} label="Empate" />
                   <ResultForm matchId={match.id} result="AWAY" currentResult={match.result} label={match.awayTeam} />

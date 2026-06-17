@@ -51,6 +51,8 @@ function CandidateGrid({
       onChange(selected.filter(s => s !== name))
     } else if (selected.length < max) {
       onChange([...selected, name])
+    } else if (max === 1) {
+      onChange([name])
     }
   }
 
@@ -58,7 +60,7 @@ function CandidateGrid({
     <div className="flex flex-wrap gap-2">
       {candidates.map(c => {
         const isSelected = selected.includes(c.name)
-        const isFull = selected.length >= max && !isSelected
+        const isFull = max > 1 && selected.length >= max && !isSelected
         const isDisabled = disabled || isFull
         return (
           <button
@@ -121,7 +123,7 @@ export function SpecialPicksForm({
   const championLockedByDeadline = championDeadlineLocked ?? locked
   const scorerLockedByDeadline = topScorerDeadlineLocked ?? locked
 
-  const championReadOnly = championLockedByDeadline || championIsSaved || championLocked
+  const championReadOnly = championLockedByDeadline || championLocked
   const scorerReadOnly = scorerLockedByDeadline || scorerIsSaved || topScorerLocked
 
   function getLockedReason({

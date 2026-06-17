@@ -32,14 +32,7 @@ export async function saveChampionPick(champion: string) {
     return { error: 'La fase de grupos ya terminó, no podés cambiar tu campeón' }
   }
 
-  const [existingPick, lock] = await Promise.all([
-    prisma.specialPick.findUnique({ where: { userId: session.user.id } }),
-    prisma.specialPickLock.findUnique({ where: { id: 'global' } }),
-  ])
-
-  if ((existingPick?.champions.filter(Boolean).length ?? 0) === 1) {
-    return { error: 'Tu pick de campeón ya quedó bloqueado' }
-  }
+  const lock = await prisma.specialPickLock.findUnique({ where: { id: 'global' } })
 
   if (lock?.championLockedAt) {
     return { error: 'El campeón fue bloqueado por el admin' }

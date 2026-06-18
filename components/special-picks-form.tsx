@@ -193,6 +193,7 @@ export function SpecialPicksForm({
                 max={1}
                 onChange={v => setChampion(v[0] ?? '')}
                 variant="amber"
+                disabled={isPending}
               />
               <Button
                 type="button"
@@ -232,6 +233,7 @@ export function SpecialPicksForm({
                 max={1}
                 onChange={v => setScorer(v[0] ?? '')}
                 variant="primary"
+                disabled={isPending}
               />
               <Button
                 type="button"

@@ -7,6 +7,21 @@ import { prisma } from '@/lib/db'
 
 const pickSchema = z.enum(['HOME', 'DRAW', 'AWAY'])
 
+export async function getMissedMatchesToday(startOfDay: Date, endOfDay: Date) {
+  const session = await auth()
+  if (!session) return []
+
+  return prisma.match.findMany({
+    where: {
+      kickoff: { gte: startOfDay, lte: endOfDay },
+      homeTeam: { not: 'POR DEFINIR' },
+      predictions: { none: { userId: session.user.id } },
+    },
+    orderBy: { kickoff: 'asc' },
+    select: { id: true, homeTeam: true, awayTeam: true, kickoff: true },
+  })
+}
+
 export async function createOrUpdatePrediction(matchId: string, pick: string) {
   const session = await auth()
   if (!session) return { error: 'No autenticado' }

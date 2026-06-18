@@ -37,53 +37,61 @@ export function MatchPickList({ matches, userId }: Props) {
     return <p className="text-muted-foreground text-sm py-4">No hay partidos disponibles para esta fase.</p>
   }
 
+  const now = new Date()
+
   return (
     <div className="space-y-2">
-      {matches.map(match => (
-        <div
-          key={match.id}
-          id={`m-${match.id}`}
-          className="flex items-start justify-between gap-4 p-4 border rounded-lg scroll-mt-16"
-        >
-          <div>
-            <p className="font-medium text-sm">
-              {match.homeTeam} vs {match.awayTeam}
-            </p>
-            <UserTimezoneDateTime
-              value={new Date(match.kickoff).toISOString()}
-              className="text-xs text-muted-foreground"
-            />
-            {match.currentPick && (
-              <Badge variant="secondary" className="mt-1 text-xs">
-                {match.currentPick === 'HOME'
-                  ? match.homeTeam
-                  : match.currentPick === 'AWAY'
-                    ? match.awayTeam
-                    : 'Empate'}
-              </Badge>
-            )}
-          </div>
+      {matches.map(match => {
+        const isPast = new Date(match.kickoff) <= now
+        return (
+          <div
+            key={match.id}
+            id={`m-${match.id}`}
+            className={`flex items-start justify-between gap-4 p-4 border rounded-lg scroll-mt-16 ${isPast ? 'opacity-50' : ''}`}
+          >
+            <div>
+              <p className="font-medium text-sm">
+                {match.homeTeam} vs {match.awayTeam}
+              </p>
+              <UserTimezoneDateTime
+                value={new Date(match.kickoff).toISOString()}
+                className="text-xs text-muted-foreground"
+              />
+              {isPast && (
+                <span className="text-xs text-muted-foreground italic">Partido iniciado</span>
+              )}
+              {match.currentPick && (
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {match.currentPick === 'HOME'
+                    ? match.homeTeam
+                    : match.currentPick === 'AWAY'
+                      ? match.awayTeam
+                      : 'Empate'}
+                </Badge>
+              )}
+            </div>
 
-          <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-            {(['HOME', 'DRAW', 'AWAY'] as const).map(pick => {
-              const label =
-                pick === 'HOME' ? match.homeTeam : pick === 'AWAY' ? match.awayTeam : 'Empate'
-              return (
-                <Button
-                  key={pick}
-                  size="sm"
-                  variant={match.currentPick === pick ? 'default' : 'outline'}
-                  className="text-xs"
-                  disabled={isPending}
-                  onClick={() => handlePick(match.id, pick)}
-                >
-                  {label}
-                </Button>
-              )
-            })}
+            <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+              {(['HOME', 'DRAW', 'AWAY'] as const).map(pick => {
+                const label =
+                  pick === 'HOME' ? match.homeTeam : pick === 'AWAY' ? match.awayTeam : 'Empate'
+                return (
+                  <Button
+                    key={pick}
+                    size="sm"
+                    variant={match.currentPick === pick ? 'default' : 'outline'}
+                    className="text-xs"
+                    disabled={isPending || isPast}
+                    onClick={() => handlePick(match.id, pick)}
+                  >
+                    {label}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

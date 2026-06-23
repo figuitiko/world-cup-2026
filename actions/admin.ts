@@ -135,7 +135,7 @@ export async function enterMatchResult(matchId: string, result: string) {
 
   await prisma.match.update({
     where: { id: matchId },
-    data: { result: parsed.data },
+    data: { result: parsed.data, locked: true },
   })
 
   revalidatePath('/admin/results')

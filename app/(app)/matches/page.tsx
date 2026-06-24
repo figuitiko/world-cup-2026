@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { MatchCard } from '@/components/match-card'
+import { TodaySync } from '@/components/today-sync'
 import Link from 'next/link'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
@@ -19,11 +20,11 @@ const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ round?: string; group?: string }>
+  searchParams: Promise<{ round?: string; group?: string; today?: string }>
 }) {
   const session = await auth()
   const userId = session!.user.id
-  const { round: rawRound, group: rawGroup } = await searchParams
+  const { round: rawRound, group: rawGroup, today: rawToday } = await searchParams
 
   const totalMatches = await prisma.match.count()
 
@@ -48,9 +49,17 @@ export default async function MatchesPage({
   const activeRound = rawRound && existingRoundKeys.has(rawRound) ? rawRound : 'GROUP'
   const activeGroup = activeRound === 'GROUP' ? (rawGroup ?? null) : null
 
-  const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  let startOfToday: Date
+  let startOfTomorrow: Date
+  if (rawToday && /^\d{4}-\d{2}-\d{2}$/.test(rawToday)) {
+    const [y, mo, d] = rawToday.split('-').map(Number)
+    startOfToday = new Date(y, mo - 1, d)
+    startOfTomorrow = new Date(y, mo - 1, d + 1)
+  } else {
+    const now = new Date()
+    startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  }
 
   const [matches, predictions, todayMatches] = await Promise.all([
     prisma.match.findMany({
@@ -71,6 +80,7 @@ export default async function MatchesPage({
 
   return (
     <div className="space-y-6">
+      <TodaySync />
       <h1 className="font-heading font-bold text-3xl">Partidos</h1>
 
       {/* Round tabs */}

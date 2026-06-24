@@ -20,11 +20,11 @@ const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ round?: string; group?: string; today?: string }>
+  searchParams: Promise<{ round?: string; group?: string; todayStart?: string; todayEnd?: string }>
 }) {
   const session = await auth()
   const userId = session!.user.id
-  const { round: rawRound, group: rawGroup, today: rawToday } = await searchParams
+  const { round: rawRound, group: rawGroup, todayStart, todayEnd } = await searchParams
 
   const totalMatches = await prisma.match.count()
 
@@ -51,10 +51,9 @@ export default async function MatchesPage({
 
   let startOfToday: Date
   let startOfTomorrow: Date
-  if (rawToday && /^\d{4}-\d{2}-\d{2}$/.test(rawToday)) {
-    const [y, mo, d] = rawToday.split('-').map(Number)
-    startOfToday = new Date(y, mo - 1, d)
-    startOfTomorrow = new Date(y, mo - 1, d + 1)
+  if (todayStart && todayEnd) {
+    startOfToday = new Date(todayStart)
+    startOfTomorrow = new Date(todayEnd)
   } else {
     const now = new Date()
     startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())

@@ -9,13 +9,23 @@ export function TodaySync() {
   const pathname = usePathname()
 
   useEffect(() => {
-    const clientDate = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local tz
-    if (searchParams.get('today') !== clientDate) {
+    const now = new Date()
+    const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const localTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+    const todayStart = localMidnight.toISOString()
+    const todayEnd = localTomorrow.toISOString()
+
+    if (
+      searchParams.get('todayStart') !== todayStart ||
+      searchParams.get('todayEnd') !== todayEnd
+    ) {
       const params = new URLSearchParams(searchParams.toString())
-      params.set('today', clientDate)
+      params.set('todayStart', todayStart)
+      params.set('todayEnd', todayEnd)
+      params.delete('today')
       router.replace(`${pathname}?${params.toString()}`)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router, searchParams, pathname])
 
   return null
 }

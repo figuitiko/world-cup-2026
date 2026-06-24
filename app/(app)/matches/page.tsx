@@ -48,7 +48,11 @@ export default async function MatchesPage({
   const activeRound = rawRound && existingRoundKeys.has(rawRound) ? rawRound : 'GROUP'
   const activeGroup = activeRound === 'GROUP' ? (rawGroup ?? null) : null
 
-  const [matches, predictions] = await Promise.all([
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+
+  const [matches, predictions, todayMatches] = await Promise.all([
     prisma.match.findMany({
       where: {
         round: activeRound,
@@ -57,6 +61,10 @@ export default async function MatchesPage({
       orderBy: [{ kickoff: 'asc' }, { matchNumber: 'asc' }],
     }),
     prisma.prediction.findMany({ where: { userId } }),
+    prisma.match.findMany({
+      where: { kickoff: { gte: startOfToday, lt: startOfTomorrow } },
+      orderBy: [{ kickoff: 'asc' }, { matchNumber: 'asc' }],
+    }),
   ])
 
   const predictionMap = new Map(predictions.map((p: Prediction) => [p.matchId, p]))
@@ -105,6 +113,16 @@ export default async function MatchesPage({
             >
               {g}
             </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Today's matches */}
+      {todayMatches.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="font-heading font-bold text-lg">Hoy</h2>
+          {todayMatches.map((m: Match) => (
+            <MatchCard key={m.id} match={m} prediction={predictionMap.get(m.id) ?? null} />
           ))}
         </div>
       )}

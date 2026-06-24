@@ -4,10 +4,10 @@ import { UserTimezoneDateTime } from '@/components/user-timezone-date-time'
 import { cn } from '@/lib/utils'
 import type { Match, Prediction } from '@/generated/prisma/client'
 
-const RESULT_LABEL: Record<string, string> = {
-  HOME: 'Local',
-  DRAW: 'Empate',
-  AWAY: 'Visitante',
+function resultLabel(result: string, homeTeam: string, awayTeam: string): string {
+  if (result === 'HOME') return `Ganó ${homeTeam}`
+  if (result === 'AWAY') return `Ganó ${awayTeam}`
+  return 'Empate'
 }
 
 function pickLabel(pick: string, homeTeam: string, awayTeam: string): string {
@@ -101,7 +101,7 @@ export function MatchCard({ match, prediction }: Props) {
               isCorrect === false && 'bg-red-100 text-red-700 border-red-200'
             )}
           >
-            {isCorrect ? '✓' : '✗'} {RESULT_LABEL[match.result]}
+            {isCorrect ? '✓' : '✗'} {resultLabel(match.result, match.homeTeam, match.awayTeam)}
           </Badge>
         )}
         {isLocked && !match.result && (

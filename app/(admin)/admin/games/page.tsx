@@ -67,13 +67,23 @@ export default async function AdminGamesPage({
   const activeRound = rawRound && existingRoundKeys.has(rawRound) ? rawRound : "GROUP";
   const activeGroup = activeRound === "GROUP" ? (rawGroup ?? null) : null;
 
-  const matches = await prisma.match.findMany({
-    where: {
-      round: activeRound,
-      ...(activeRound === "GROUP" && activeGroup ? { group: activeGroup } : {}),
-    },
-    orderBy: [{ kickoff: "asc" }, { matchNumber: "asc" }],
-  });
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+
+  const [matches, todayMatches] = await Promise.all([
+    prisma.match.findMany({
+      where: {
+        round: activeRound,
+        ...(activeRound === "GROUP" && activeGroup ? { group: activeGroup } : {}),
+      },
+      orderBy: [{ kickoff: "asc" }, { matchNumber: "asc" }],
+    }),
+    prisma.match.findMany({
+      where: { kickoff: { gte: startOfToday, lt: startOfTomorrow } },
+      orderBy: [{ kickoff: "asc" }, { matchNumber: "asc" }],
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -125,6 +135,50 @@ export default async function AdminGamesPage({
               {g}
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Today's matches */}
+      {todayMatches.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold">Hoy</h2>
+          {todayMatches.map((match: Match) => {
+            async function handleDeleteToday() {
+              "use server";
+              await deleteMatch(match.id);
+            }
+            return (
+              <div
+                key={match.id}
+                className="flex items-start justify-between gap-4 p-4 border rounded-lg border-primary/40 bg-primary/5"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-muted-foreground">#{match.matchNumber}</span>
+                    <span className="font-medium">{match.homeTeam} vs {match.awayTeam}</span>
+                    {match.result && (
+                      <Badge variant="secondary">
+                        {match.result === "HOME" ? match.homeTeam : match.result === "AWAY" ? match.awayTeam : "Empate"}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {match.group ? `Grupo ${match.group} · ` : ""}
+                    <UserTimezoneDateTime value={match.kickoff.toISOString()} dateStyle="medium" className="inline tabular-nums" />
+                    {match.venue ? ` · ${match.venue}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/admin/games/${match.id}/edit`}>Editar</Link>
+                  </Button>
+                  <form action={handleDeleteToday}>
+                    <Button type="submit" variant="destructive" size="sm">Eliminar</Button>
+                  </form>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 

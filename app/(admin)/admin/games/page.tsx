@@ -182,6 +182,15 @@ export default async function AdminGamesPage({
         </div>
       )}
 
+      {/* Separator */}
+      {todayMatches.length > 0 && matches.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 border-t" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Todos los partidos</span>
+          <div className="flex-1 border-t" />
+        </div>
+      )}
+
       {/* Match list */}
       <div className="space-y-3">
         {matches.map((match: Match) => {

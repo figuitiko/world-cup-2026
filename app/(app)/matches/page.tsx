@@ -127,6 +127,15 @@ export default async function MatchesPage({
         </div>
       )}
 
+      {/* Separator */}
+      {todayMatches.length > 0 && matches.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 border-t" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Todos los partidos</span>
+          <div className="flex-1 border-t" />
+        </div>
+      )}
+
       {/* Match list */}
       <div className="space-y-2">
         {matches.map((m: Match) => (

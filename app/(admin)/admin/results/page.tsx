@@ -1,41 +1,11 @@
 import { prisma } from '@/lib/db'
-import { enterMatchResult } from '@/actions/admin'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { UserTimezoneDateTime } from '@/components/user-timezone-date-time'
 import { LockMatchButton } from './lock-match-button'
+import { SetResultButton } from './set-result-button'
 import { Lock } from 'lucide-react'
 import type { Match } from '@/generated/prisma/client'
-
-function ResultForm({
-  matchId,
-  result,
-  currentResult,
-  label,
-}: {
-  matchId: string
-  result: string
-  currentResult: string | null
-  label: string
-}) {
-  async function submit() {
-    'use server'
-    await enterMatchResult(matchId, result)
-  }
-
-  return (
-    <form action={submit}>
-      <Button
-        type="submit"
-        variant={currentResult === result ? 'default' : 'outline'}
-        size="sm"
-      >
-        {label}
-      </Button>
-    </form>
-  )
-}
 
 export default async function AdminResultsPage() {
   const matches = await prisma.match.findMany({
@@ -84,9 +54,9 @@ export default async function AdminResultsPage() {
                   )}
                 </div>
                 <div className="flex gap-2 flex-wrap items-center">
-                  <ResultForm matchId={match.id} result="HOME" currentResult={match.result} label={match.homeTeam} />
-                  <ResultForm matchId={match.id} result="DRAW" currentResult={match.result} label="Empate" />
-                  <ResultForm matchId={match.id} result="AWAY" currentResult={match.result} label={match.awayTeam} />
+                  <SetResultButton matchId={match.id} result="HOME" label={match.homeTeam} isSelected={match.result === 'HOME'} hasExistingResult={!!match.result} />
+                  <SetResultButton matchId={match.id} result="DRAW" label="Empate" isSelected={match.result === 'DRAW'} hasExistingResult={!!match.result} />
+                  <SetResultButton matchId={match.id} result="AWAY" label={match.awayTeam} isSelected={match.result === 'AWAY'} hasExistingResult={!!match.result} />
                   {!match.locked && (
                     <LockMatchButton
                       matchId={match.id}

@@ -10,7 +10,7 @@ import { CalendarPlus } from "lucide-react";
 
 const ROUNDS = [
   { key: "GROUP", label: "Grupos" },
-  { key: "R32", label: "32avos" },
+  { key: "R32", label: "16vos" },
   { key: "R16", label: "Octavos" },
   { key: "QF", label: "Cuartos" },
   { key: "SF", label: "Semis" },

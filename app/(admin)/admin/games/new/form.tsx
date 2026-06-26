@@ -77,7 +77,7 @@ export default function NewGameForm({ teams }: { teams: Team[] }) {
                     <SelectValue placeholder="Seleccionar local" />
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    {teams.map(t => (
+                    {teams.filter(t => t.name !== form.awayTeam).map(t => (
                       <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -97,7 +97,7 @@ export default function NewGameForm({ teams }: { teams: Team[] }) {
                     <SelectValue placeholder="Seleccionar visitante" />
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
-                    {teams.map(t => (
+                    {teams.filter(t => t.name !== form.homeTeam).map(t => (
                       <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
                     ))}
                   </SelectContent>

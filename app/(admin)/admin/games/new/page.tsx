@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import NewGameForm from './form'
 
 export default async function NewGamePage() {
-  const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } })
+  const teams = await prisma.team.findMany({ orderBy: { name: 'asc' } }).catch(() => [])
 
   return (
     <div className="space-y-6">

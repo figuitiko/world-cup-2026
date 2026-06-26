@@ -6,7 +6,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
   const { id } = await params
   const [match, teams] = await Promise.all([
     prisma.match.findUnique({ where: { id } }),
-    prisma.team.findMany({ orderBy: { name: 'asc' } }),
+    prisma.team.findMany({ orderBy: { name: 'asc' } }).catch(() => []),
   ])
   if (!match) notFound()
 

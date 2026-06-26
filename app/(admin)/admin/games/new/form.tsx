@@ -14,28 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { updateMatch } from '@/actions/admin'
-import type { Match, Team } from '@/generated/prisma/client'
+import { createMatch } from '@/actions/admin'
+import type { Team } from '@/generated/prisma/client'
 
-function toDatetimeLocal(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+const INITIAL = { matchNumber: '', group: '', round: '', homeTeam: '', awayTeam: '', kickoff: '', venue: '' }
 
-export default function EditGameForm({ match, teams }: { match: Match; teams: Team[] }) {
+export default function NewGameForm({ teams }: { teams: Team[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [form, setForm] = useState(() => ({
-    matchNumber: String(match.matchNumber),
-    group: match.group ?? '',
-    round: match.round,
-    homeTeam: match.homeTeam,
-    awayTeam: match.awayTeam,
-    kickoff: typeof window !== 'undefined'
-      ? toDatetimeLocal(match.kickoff)
-      : match.kickoff.toISOString().slice(0, 16),
-    venue: match.venue,
-  }))
+  const [form, setForm] = useState(INITIAL)
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -44,14 +31,14 @@ export default function EditGameForm({ match, teams }: { match: Match; teams: Te
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const result = await updateMatch(match.id, {
+      const result = await createMatch({
         ...form,
         kickoff: new Date(form.kickoff).toISOString(),
       })
       if (result?.error) {
         toast.error(result.error)
       } else {
-        toast.success('Partido actualizado')
+        toast.success('Partido creado')
         router.push('/admin/games')
       }
     })
@@ -76,7 +63,7 @@ export default function EditGameForm({ match, teams }: { match: Match; teams: Te
           </div>
           <div className="space-y-2">
             <Label htmlFor="round">Fase</Label>
-            <Input id="round" name="round" value={form.round} onChange={onChange} required />
+            <Input id="round" name="round" value={form.round} onChange={onChange} placeholder="Ej: GROUP" required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -127,7 +114,7 @@ export default function EditGameForm({ match, teams }: { match: Match; teams: Te
                 (tu zona horaria: {Intl.DateTimeFormat().resolvedOptions().timeZone})
               </span>
             </Label>
-            <Input id="kickoff" name="kickoff" type="datetime-local" value={form.kickoff} onChange={onChange} required suppressHydrationWarning />
+            <Input id="kickoff" name="kickoff" type="datetime-local" value={form.kickoff} onChange={onChange} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="venue">Estadio</Label>
@@ -135,7 +122,7 @@ export default function EditGameForm({ match, teams }: { match: Match; teams: Te
           </div>
           <div className="flex gap-3">
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : 'Guardar cambios'}
+              {isPending ? 'Guardando...' : 'Guardar'}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
               Cancelar

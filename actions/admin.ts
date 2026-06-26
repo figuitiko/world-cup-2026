@@ -475,3 +475,50 @@ export async function deleteMatch(id: string) {
   revalidatePath('/admin/games')
   revalidatePath('/matches')
 }
+
+const teamSchema = z.object({ name: z.string().trim().min(1, 'Nombre requerido') })
+
+export async function createTeam(data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const parsed = teamSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  try {
+    await prisma.team.create({ data: { name: parsed.data.name } })
+  } catch {
+    return { error: 'Ya existe ese equipo' }
+  }
+
+  revalidatePath('/admin/teams')
+}
+
+export async function updateTeam(id: string, data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  const parsed = teamSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  try {
+    await prisma.team.update({ where: { id }, data: { name: parsed.data.name } })
+  } catch {
+    return { error: 'Ya existe ese equipo' }
+  }
+
+  revalidatePath('/admin/teams')
+}
+
+export async function deleteTeam(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+
+  try {
+    await prisma.team.delete({ where: { id } })
+  } catch {
+    return { error: 'No se pudo eliminar el equipo' }
+  }
+
+  revalidatePath('/admin/teams')
+}

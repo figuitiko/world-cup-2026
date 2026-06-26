@@ -98,3 +98,8 @@ model TopScorerCandidate {
   name    String @unique
   country String
 }
+
+model Team {
+  id   String @id @default(cuid())
+  name String @unique
+}

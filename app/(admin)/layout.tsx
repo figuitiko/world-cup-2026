@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
+import { Toaster } from '@/components/ui/sonner'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -25,6 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/candidates" className="hover:underline">
               Candidatos
             </Link>
+            <Link href="/admin/teams" className="hover:underline">
+              Equipos
+            </Link>
             <Link href="/admin/user-picks" className="hover:underline">
               Picks
             </Link>
@@ -41,6 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6">{children}</main>
+      <Toaster />
     </div>
   )
 }

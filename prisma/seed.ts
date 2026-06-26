@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import { PrismaClient } from '../generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { hash } from 'bcryptjs'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set. Check your .env file.')
@@ -142,32 +141,6 @@ async function main() {
   })
   console.log(`League invite code: ${league.inviteCode}`)
 
-  const adminPassword = process.env.ADMIN_PASSWORD ?? 'changeme123'
-  await prisma.user.upsert({
-    where: { email: 'admin@mundial.local' },
-    update: {},
-    create: {
-      name: 'Admin',
-      email: 'admin@mundial.local',
-      password: await hash(adminPassword, 12),
-      isAdmin: true,
-      leagueId: league.id,
-    },
-  })
-  console.log('Admin user created: admin@mundial.local')
-
-  await prisma.user.upsert({
-    where: { email: 'admin-monchi@mundial.local' },
-    update: {},
-    create: {
-      name: 'Monchi',
-      email: 'admin-monchi@mundial.local',
-      password: await hash(adminPassword, 12),
-      isAdmin: true,
-      leagueId: league.id,
-    },
-  })
-  console.log('Admin user created: admin-monchi@mundial.local')
 
   for (const m of GROUP_MATCHES) {
     await prisma.match.upsert({
@@ -226,6 +199,13 @@ async function main() {
     skipDuplicates: true,
   })
   console.log(`Seeded ${topScorerCandidates.length} top scorer candidates`)
+
+  const teamNames = [...new Set(GROUP_MATCHES.flatMap(m => [m.homeTeam, m.awayTeam]))]
+  await prisma.team.createMany({
+    data: teamNames.map(name => ({ name })),
+    skipDuplicates: true,
+  })
+  console.log(`Seeded ${teamNames.length} teams`)
 
   console.log('Done.')
 }

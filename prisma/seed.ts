@@ -207,6 +207,18 @@ async function main() {
   })
   console.log(`Seeded ${teamNames.length} teams`)
 
+  const roundsData = [
+    { key: 'GROUP', label: 'Grupos',      order: 0 },
+    { key: 'R32',   label: '16vos',       order: 1 },
+    { key: 'R16',   label: 'Octavos',     order: 2 },
+    { key: 'QF',    label: 'Cuartos',     order: 3 },
+    { key: 'SF',    label: 'Semis',       order: 4 },
+    { key: '3RD',   label: '3er puesto',  order: 5 },
+    { key: 'FINAL', label: 'Final',       order: 6 },
+  ]
+  await prisma.round.createMany({ data: roundsData, skipDuplicates: true })
+  console.log(`Seeded ${roundsData.length} rounds`)
+
   console.log('Done.')
 }
 

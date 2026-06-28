@@ -15,11 +15,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createMatch } from '@/actions/admin'
-import type { Team } from '@/generated/prisma/client'
+import type { Team, Round } from '@/generated/prisma/client'
 
 const INITIAL = { matchNumber: '', group: '', round: '', homeTeam: '', awayTeam: '', kickoff: '', venue: '' }
 
-export default function NewGameForm({ teams }: { teams: Team[] }) {
+export default function NewGameForm({ teams, rounds }: { teams: Team[]; rounds: Round[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState(INITIAL)
@@ -62,8 +62,21 @@ export default function NewGameForm({ teams }: { teams: Team[] }) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="round">Fase</Label>
-            <Input id="round" name="round" value={form.round} onChange={onChange} placeholder="Ej: GROUP" required />
+            <Label>Fase</Label>
+            {rounds.length > 0 ? (
+              <Select value={form.round} onValueChange={(val) => setForm(prev => ({ ...prev, round: val }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar fase" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rounds.map(r => (
+                    <SelectItem key={r.id} value={r.key}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input id="round" name="round" value={form.round} onChange={onChange} placeholder="Ej: GROUP" required />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

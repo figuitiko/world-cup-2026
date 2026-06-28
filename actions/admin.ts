@@ -510,6 +510,49 @@ export async function updateTeam(id: string, data: unknown) {
   revalidatePath('/admin/teams')
 }
 
+const roundSchema = z.object({
+  key: z.string().trim().min(1, 'Clave requerida'),
+  label: z.string().trim().min(1, 'Etiqueta requerida'),
+  order: z.coerce.number().int().default(0),
+})
+
+export async function createRound(data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  const parsed = roundSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+  try {
+    await prisma.round.create({ data: parsed.data })
+  } catch {
+    return { error: 'Ya existe esa fase' }
+  }
+  revalidatePath('/admin/rounds')
+}
+
+export async function updateRound(id: string, data: unknown) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  const parsed = roundSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+  try {
+    await prisma.round.update({ where: { id }, data: parsed.data })
+  } catch {
+    return { error: 'Ya existe esa fase' }
+  }
+  revalidatePath('/admin/rounds')
+}
+
+export async function deleteRound(id: string) {
+  const admin = await assertAdmin()
+  if (!admin) return { error: 'Sin permisos' }
+  try {
+    await prisma.round.delete({ where: { id } })
+  } catch {
+    return { error: 'No se pudo eliminar la fase' }
+  }
+  revalidatePath('/admin/rounds')
+}
+
 export async function deleteTeam(id: string) {
   const admin = await assertAdmin()
   if (!admin) return { error: 'Sin permisos' }

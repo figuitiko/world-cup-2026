@@ -15,14 +15,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { updateMatch } from '@/actions/admin'
-import type { Match, Team } from '@/generated/prisma/client'
+import type { Match, Team, Round } from '@/generated/prisma/client'
 
 function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-export default function EditGameForm({ match, teams }: { match: Match; teams: Team[] }) {
+export default function EditGameForm({ match, teams, rounds }: { match: Match; teams: Team[]; rounds: Round[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState(() => ({
@@ -75,8 +75,21 @@ export default function EditGameForm({ match, teams }: { match: Match; teams: Te
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="round">Fase</Label>
-            <Input id="round" name="round" value={form.round} onChange={onChange} required />
+            <Label>Fase</Label>
+            {rounds.length > 0 ? (
+              <Select value={form.round} onValueChange={(val) => setForm(prev => ({ ...prev, round: val }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar fase" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rounds.map(r => (
+                    <SelectItem key={r.id} value={r.key}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input id="round" name="round" value={form.round} onChange={onChange} required />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

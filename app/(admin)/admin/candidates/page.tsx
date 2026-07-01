@@ -7,6 +7,7 @@ import {
 } from '@/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DeleteButton } from '@/components/delete-button'
 import { Trophy, UserRound } from 'lucide-react'
 
 export default async function AdminCandidatesPage() {
@@ -29,15 +30,15 @@ export default async function AdminCandidatesPage() {
               await deleteChampionCandidate(c.id)
             }
             return (
-              <form key={c.id} action={remove}>
+              <DeleteButton key={c.id} action={remove} title="¿Eliminar candidato?" description={c.name}>
                 <button
-                  type="submit"
+                  type="button"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
                 >
                   {c.name}
                   <span className="text-xs opacity-50">✕</span>
                 </button>
-              </form>
+              </DeleteButton>
             )
           })}
           {champions.length === 0 && (
@@ -72,16 +73,16 @@ export default async function AdminCandidatesPage() {
               await deleteTopScorerCandidate(s.id)
             }
             return (
-              <form key={s.id} action={remove}>
+              <DeleteButton key={s.id} action={remove} title="¿Eliminar candidato?" description={`${s.name} · ${s.country}`}>
                 <button
-                  type="submit"
+                  type="button"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
                 >
                   {s.name}
                   <span className="text-xs text-muted-foreground">{s.country}</span>
                   <span className="text-xs opacity-50">✕</span>
                 </button>
-              </form>
+              </DeleteButton>
             )
           })}
           {scorers.length === 0 && (

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { deleteTeam } from '@/actions/admin'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { DeleteButton } from '@/components/delete-button'
 import { Shield } from 'lucide-react'
 import type { Team } from '@/generated/prisma/client'
 
@@ -49,9 +50,11 @@ export default async function AdminTeamsPage() {
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/teams/${team.id}/edit`}>Editar</Link>
                   </Button>
-                  <form action={handleDelete}>
-                    <Button type="submit" variant="destructive" size="sm">Eliminar</Button>
-                  </form>
+                  <DeleteButton
+                    action={handleDelete}
+                    title="¿Eliminar equipo?"
+                    description={team.name}
+                  />
                 </div>
               </div>
             )

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { deleteRound } from '@/actions/admin'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { DeleteButton } from '@/components/delete-button'
 import type { Round } from '@/generated/prisma/client'
 
 export default async function AdminRoundsPage() {
@@ -35,9 +36,11 @@ export default async function AdminRoundsPage() {
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/rounds/${round.id}/edit`}>Editar</Link>
                   </Button>
-                  <form action={handleDelete}>
-                    <Button type="submit" variant="destructive" size="sm">Eliminar</Button>
-                  </form>
+                  <DeleteButton
+                    action={handleDelete}
+                    title="¿Eliminar fase?"
+                    description={`${round.label} (${round.key})`}
+                  />
                 </div>
               </div>
             )

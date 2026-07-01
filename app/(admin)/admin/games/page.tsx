@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserTimezoneDateTime } from "@/components/user-timezone-date-time";
 import { TodaySync } from "@/components/today-sync";
+import { DeleteButton } from "@/components/delete-button";
 import type { Match } from "@/generated/prisma/client";
 import { CalendarPlus } from "lucide-react";
 
@@ -181,9 +182,11 @@ export default async function AdminGamesPage({
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/games/${match.id}/edit`}>Editar</Link>
                   </Button>
-                  <form action={handleDeleteToday}>
-                    <Button type="submit" variant="destructive" size="sm">Eliminar</Button>
-                  </form>
+                  <DeleteButton
+                    action={handleDeleteToday}
+                    title="¿Eliminar partido?"
+                    description={`${match.homeTeam} vs ${match.awayTeam}`}
+                  />
                 </div>
               </div>
             )
@@ -245,11 +248,11 @@ export default async function AdminGamesPage({
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/games/${match.id}/edit`}>Editar</Link>
                 </Button>
-                <form action={handleDelete}>
-                  <Button type="submit" variant="destructive" size="sm">
-                    Eliminar
-                  </Button>
-                </form>
+                <DeleteButton
+                  action={handleDelete}
+                  title="¿Eliminar partido?"
+                  description={`${match.homeTeam} vs ${match.awayTeam}`}
+                />
               </div>
             </div>
           );

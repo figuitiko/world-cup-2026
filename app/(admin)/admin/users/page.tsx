@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { DeleteButton } from '@/components/delete-button'
 import { UsersRound } from 'lucide-react'
 
 export default async function AdminUsersPage() {
@@ -72,16 +73,12 @@ export default async function AdminUsersPage() {
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/users/${user.id}/edit`}>Editar</Link>
                   </Button>
-                  <form action={handleDelete}>
-                    <Button
-                      type="submit"
-                      variant="destructive"
-                      size="sm"
-                      disabled={isCurrentUser}
-                    >
-                      Eliminar
-                    </Button>
-                  </form>
+                  <DeleteButton
+                    action={handleDelete}
+                    title="¿Eliminar usuario?"
+                    description={`${user.name} · ${user.email}`}
+                    disabled={isCurrentUser}
+                  />
                 </div>
               </CardContent>
             </Card>
